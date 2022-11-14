@@ -250,7 +250,7 @@ function pbar_draw()
 			if not state.thumbfast.disabled then
 				local pw = opt.preview_border_width
 				local hpad = 4 + pw
-				local y = dpy_w - (ypos + state.thumbfast.height)
+				local y = dpy_h - (ypos + state.thumbfast.height + pw)
 				local x = state.mouse.x - (state.thumbfast.width / 2)
 				x = math.max(hpad, x)
 				x = math.min(dpy_w - (hpad + state.thumbfast.width), x)
@@ -258,7 +258,7 @@ function pbar_draw()
 					"script-message-to", "thumbfast", "thumb",
 					hover_sec, x, y
 				)
-				ypos = ypos + state.thumbfast.height
+				ypos = ypos + state.thumbfast.height + pw
 
 				-- L4: preview border
 				if pw > 0 then
@@ -271,7 +271,7 @@ function pbar_draw()
 					draw_rect(x - pw, y + state.thumbfast.height, brw, pw, c)
 					draw_rect(x + state.thumbfast.width, y - pw, pw, brh, c)
 
-					ypos = ypos + (pw * 2)
+					ypos = ypos + pw
 				end
 			end
 		end
