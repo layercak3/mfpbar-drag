@@ -330,8 +330,7 @@ end
 
 function pbar_minimize()
 	if not state.pbar_isminimized then
-		local m = { hover = false, y = -1 }
-		pbar_update(m)
+		pbar_update({ hover = false, y = -1 })
 	end
 end
 
