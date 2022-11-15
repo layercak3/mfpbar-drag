@@ -108,26 +108,27 @@ function draw_append(text)
 	end
 end
 
-function draw_rect(x, y, w, h, color)
-	local s = '{\\pos(0, 0)}{\\bord0}{\\1c&' .. color .. '&}'
-	s = s .. string.format(
-		'{\\p1}m %d %d l %d %d %d %d %d %d{\\p0}',
-		x,      y,
-		x + w,  y,
-		x + w,  y + h,
-		x,      y + h
-	)
-	draw_append(s)
-end
-
-function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, bw, bcolor)
-	local s = '{\\pos(0, 0)}{\\bord' .. bw .. '}'
-	s = s .. '{\\1c&' .. color .. '&}{\\3c&' .. bcolor .. '&}'
+function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
+	local s = '{\\pos(0, 0)}'
+	opt = opt or {}
+	s = s .. '{\\1c&' .. color .. '&}'
+	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
+	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
 	s = s .. string.format(
 		'{\\p1}m %d %d l %d %d %d %d %d %d{\\p0}',
 		x0, y0, x1, y1, x2, y2, x3, y3
 	)
 	draw_append(s)
+end
+
+function draw_rect(x, y, w, h, color, opt)
+	draw_rect_point(
+		x,      y,
+		x + w,  y,
+		x + w,  y + h,
+		x,      y + h,
+		color, opt
+	)
 end
 
 function draw_text(x, y, size, text)
@@ -197,7 +198,7 @@ function pbar_draw()
 					x + tw,  y,
 					x,       y + tw,
 					opt.chapter_marker_color,
-					bw, opt.chapter_marker_border_color
+					{ bw = bw, bcolor = opt.chapter_marker_border_color }
 				)
 			end
 			ypos_incr = math.max(ypos_incr, miny)
