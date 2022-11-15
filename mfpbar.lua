@@ -131,7 +131,8 @@ function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, bw, bcolor)
 end
 
 function draw_text(x, y, size, text)
-	local s = string.format('{\\pos(%d, %d)}{\\fs%d}%s', x, y, size, text)
+	-- TODO: make text border and border-color configurable ?
+	local s = string.format('{\\pos(%d, %d)}{\\bord0}{\\fs%d}%s', x, y, size, text)
 	draw_append(s)
 end
 
