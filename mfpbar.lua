@@ -187,12 +187,7 @@ function pbar_draw()
 			local miny = tw + bw + 1 -- +1 for pad
 			for _, c in ipairs(clist) do
 				local x = dpy_w * (c.time / duration)
-				local y = nil
-				if state.pbar_isminimized then
-					y = dpy_h - math.max(ypos, miny)
-				else
-					y = dpy_h - math.max(opt.pbar_h / 2, miny)
-				end
+				local y = dpy_h - math.max(pb_h / 2, miny)
 				draw_rect_point(
 					x - tw,  y,
 					x,       y - tw,
