@@ -112,6 +112,7 @@ function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
 	local s = '{\\pos(0, 0)}'
 	opt = opt or {}
 	s = s .. '{\\1c&' .. color .. '&}'
+	s = s .. '{\\1a&' .. (opt.alpha or "00") .. '&}'
 	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
 	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
 	s = s .. string.format(
@@ -266,15 +267,11 @@ function pbar_draw()
 
 				-- L4: preview border
 				if pw > 0 then
-					local brw = tw + (pw * 2)
-					local brh = th + (pw * 2)
 					local c = opt.preview_border_color
-
-					draw_rect(x - pw, y - pw, brw, pw, c)
-					draw_rect(x - pw, y - pw, pw, brh, c)
-					draw_rect(x - pw, y + th, brw, pw, c)
-					draw_rect(x + tw, y - pw, pw, brh, c)
-
+					draw_rect(
+						x, y, tw, th, "161616",
+						{ alpha = "7F", bw = pw, bcolor = c }
+					)
 					ypos = ypos + pw
 				end
 			end
