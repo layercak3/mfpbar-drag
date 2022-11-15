@@ -122,7 +122,7 @@ end
 
 function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, bw, bcolor)
 	local s = '{\\pos(0, 0)}{\\bord' .. bw .. '}'
-	s = s .. '{\\1c&' .. color .. '&}{\\3c&' .. bcolor .. '}'
+	s = s .. '{\\1c&' .. color .. '&}{\\3c&' .. bcolor .. '&}'
 	s = s .. string.format(
 		'{\\p1}m %d %d l %d %d %d %d %d %d{\\p0}',
 		x0, y0, x1, y1, x2, y2, x3, y3
