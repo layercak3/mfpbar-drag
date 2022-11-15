@@ -164,10 +164,9 @@ function pbar_draw()
 	ypos = ypos + pb_h
 
 	if duration then
-		local ypos_incr = 0
-
 		-- L1: cache cusor
 		if state.cached_ranges then
+			assert(#state.cached_ranges > 0)
 			local ch = opt.cachebar_h
 			for _, range in ipairs(state.cached_ranges) do
 				local s = range['start']
@@ -176,18 +175,19 @@ function pbar_draw()
 				local ep = (dpy_w * (e / duration)) - sp
 
 				draw_rect(sp, dpy_h - (ch + ypos), ep, ch, opt.cachebar_color)
-				ypos_incr = ypos_incr + ch
 			end
+			ypos = ypos + ch
 		end
 
 		-- L0-???: chapters
 		if clist and opt.chapter_marker_size > 0 then
+			assert(#clist > 0)
 			local bw = opt.chapter_marker_border_width
 			local tw = opt.chapter_marker_size
 			local miny = tw + bw + 1 -- +1 for pad
+			local y = dpy_h - math.max(pb_h / 2, miny)
 			for _, c in ipairs(clist) do
 				local x = dpy_w * (c.time / duration)
-				local y = dpy_h - math.max(pb_h / 2, miny)
 				draw_rect_point(
 					x - tw,  y,
 					x,       y - tw,
@@ -197,10 +197,8 @@ function pbar_draw()
 					{ bw = bw, bcolor = opt.chapter_marker_border_color }
 				)
 			end
-			ypos_incr = math.max(ypos_incr, miny)
+			ypos = math.max(ypos, dpy_h - (y + tw + bw))
 		end
-
-		ypos = ypos + ypos_incr
 	end
 
 	if not state.pbar_isminimized then
@@ -374,7 +372,11 @@ end
 
 function set_chapter_list(kind, c)
 	assert(kind == "chapter-list")
-	state.chapters = c
+	if c and #c > 0 then
+		state.chapters = c
+	else
+		state.chapters = nil
+	end
 end
 
 function set_thumbfast(json)
