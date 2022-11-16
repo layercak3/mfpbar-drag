@@ -47,6 +47,8 @@ local opt = {
 	pbar_color = "CCCCCC",
 	cachebar_height = 0.24,
 	cachebar_color = "1C6C89",
+	-- TODO: allow selecting "duration" as well ?
+	timeline_rhs = "time-remaining",
 	hover_bar_color = "BDAE93",
 	font_size = 16,
 	font_pad = 4, -- TODO: rename this to hpad ?
@@ -174,7 +176,6 @@ function pbar_draw()
 	local fs = opt.font_size
 	local pad = opt.font_pad
 	local time = mp.get_property_osd("time-pos", "00:00:00")
-	local trem = mp.get_property_osd("time-remaining", "99:00:00")
 	local duration = state.duration
 	local clist = state.chapters
 
@@ -230,9 +231,9 @@ function pbar_draw()
 		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
 		-- LHS: current playback position
 		draw_text(pad, dpy_h - (ypos + fs), fs, time, fopt)
-		-- TODO: options to select what to display on the RHS
-		-- RHS: time remaining
-		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}-" .. trem, fopt)
+		-- RHS: time/playback remaining
+		local rem = "-" .. mp.get_property_osd(opt.timeline_rhs, "99:99:99")
+		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}" .. rem, fopt)
 		ypos = ypos + fs + (fopt.bw * 2)
 
 		if duration then
