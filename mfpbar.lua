@@ -302,7 +302,7 @@ function pbar_update(mouse)
 		state.pbar_isminimized = false
 		state.pbar_isactive = true
 		pbar_draw()
-		mp.add_forced_key_binding('mbtn_left', 'pressed_down', pressed_down)
+		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
 		mp.observe_property("time-pos", nil, pbar_draw)
 		if state.timeout then
 			assert(opt.autohide > 0)
@@ -325,7 +325,7 @@ function pbar_update(mouse)
 			mp.unobserve_property(pbar_draw)
 		end
 
-		mp.remove_key_binding('pressed_down')
+		mp.remove_key_binding('pbar_pressed')
 		state.mouse = nil
 		if state.thumbfast.available then
 			mp.commandv("script-message-to", "thumbfast", "clear")
@@ -340,7 +340,7 @@ function pbar_minimize()
 	end
 end
 
-function pressed_down()
+function pbar_pressed()
 	assert(state.mouse.hover)
 	assert(state.pbar_isactive)
 	if state.duration then
