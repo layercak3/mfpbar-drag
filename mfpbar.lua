@@ -40,13 +40,12 @@ local state = {
 	},
 }
 
--- TODO: use percentage instread of pixels for pbar_h etc ?
 -- TODO: allow option to disable minimized bar when fullscreen ?
 local opt = {
-	pbar_h = 12,
-	pbar_minimized_h = 4,
+	pbar_height = 2,
+	pbar_minimized_height = 0.5,
 	pbar_color = "CCCCCC",
-	cachebar_h = 2,
+	cachebar_height = 0.24,
 	cachebar_color = "1C6C89",
 	hover_bar_color = "BDAE93",
 	font_size = 16,
@@ -98,6 +97,11 @@ function format_time(t)
 	local m = math.floor(t / 60)
 	local s = t - (m * 60)
 	return string.format("%.2d:%.2d:%.2d", h, m, s)
+end
+
+function round(n)
+	assert(n >= 0)
+	return math.floor(n + 0.5)
 end
 
 function render()
@@ -167,16 +171,19 @@ function pbar_draw()
 	local clist = state.chapters
 
 	-- L0: playback cursor
-	local pb_h = state.pbar_isminimized and opt.pbar_minimized_h or opt.pbar_h
+	local pb_h = state.pbar_isminimized and opt.pbar_minimized_height or opt.pbar_height
 	assert(pb_h > 0)
+	pb_h = dpy_h * (pb_h / 100)
+	pb_h = math.max(round(pb_h), 4)
 	draw_rect(0, dpy_h - (pb_h + ypos), dpy_w * (p/100.0), pb_h, opt.pbar_color)
 	ypos = ypos + pb_h
 
 	if duration then
 		-- L1: cache cusor
-		if state.cached_ranges and opt.cachebar_h > 0 then
+		if state.cached_ranges and opt.cachebar_height > 0 then
 			assert(#state.cached_ranges > 0)
-			local ch = opt.cachebar_h
+			local ch = dpy_h * (opt.cachebar_height / 100)
+			ch = math.max(round(ch), 2)
 			for _, range in ipairs(state.cached_ranges) do
 				local s = range['start']
 				local e = range['end']
@@ -311,7 +318,7 @@ function pbar_update(mouse)
 			state.timeout:resume()
 		end
 	elseif state.pbar_isactive then
-		if opt.pbar_minimized_h > 0 then
+		if opt.pbar_minimized_height > 0 then
 			state.pbar_isactive = true
 			state.pbar_isminimized = true
 			pbar_draw()
@@ -421,7 +428,7 @@ function master()
 	if opt.autohide > 0 then
 		state.timeout = mp.add_timeout(opt.autohide, pbar_minimize)
 	end
-	if opt.pbar_minimized_h > 0 then
+	if opt.pbar_minimized_height > 0 then
 		mp.observe_property("time-pos", nil, pbar_draw)
 	end
 end
