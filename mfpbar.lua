@@ -165,26 +165,22 @@ function pbar_draw()
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
 	local ypos = 0
-	local p = mp.get_property_native("percent-pos")
+	local play_pos = mp.get_property_native("percent-pos")
+	local duration = state.duration
+	local clist = state.chapters
 
 	assert(state.pbar_isactive or state.pbar_isminimized)
 
-	if p == nil or dpy_w == 0 or dpy_h == 0 then
+	if play_pos == nil or dpy_w == 0 or dpy_h == 0 then
 		return
 	end
-
-	local fs = opt.font_size
-	local pad = opt.font_pad
-	local time = mp.get_property_osd("time-pos", "00:00:00")
-	local duration = state.duration
-	local clist = state.chapters
 
 	-- L0: playback cursor
 	local pb_h = state.pbar_isminimized and opt.pbar_minimized_height or opt.pbar_height
 	assert(pb_h > 0)
 	pb_h = dpy_h * (pb_h / 100)
 	pb_h = math.max(round(pb_h), 4)
-	draw_rect(0, dpy_h - (pb_h + ypos), dpy_w * (p/100.0), pb_h, opt.pbar_color)
+	draw_rect(0, dpy_h - (pb_h + ypos), dpy_w * (play_pos/100.0), pb_h, opt.pbar_color)
 	ypos = ypos + pb_h
 
 	if duration then
@@ -227,9 +223,13 @@ function pbar_draw()
 	end
 
 	if not state.pbar_isminimized then
-		-- L2: timeline
+		local fs = opt.font_size
+		local pad = opt.font_pad
 		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
+
+		-- L2: timeline
 		-- LHS: current playback position
+		local time = mp.get_property_osd("time-pos", "00:00:00")
 		draw_text(pad, dpy_h - (ypos + fs), fs, time, fopt)
 		-- RHS: time/playback remaining
 		local rem = "-" .. mp.get_property_osd(opt.timeline_rhs, "99:99:99")
