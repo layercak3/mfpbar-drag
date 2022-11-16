@@ -377,6 +377,15 @@ function set_dpy_size(kind, osd)
 	state.osd.res_x = osd.w
 	state.dpy_h     = osd.h
 	state.osd.res_y = osd.h
+	-- HACK: ensure we don't obstruct the console (excluding the preview and hovered timeline)
+	-- the shared_script_property_* functions are documented as undocumented :)
+	-- and users are discouraged to use them, but whatever...
+	local b = (opt.font_size + (opt.font_border_width * 2) + 8) / state.dpy_h -- +8 padding
+	b = b + ((opt.pbar_minimized_height + opt.cachebar_height) / 100.0)
+	utils.shared_script_property_set(
+		'osc-margins',
+		string.format('%f,%f,%f,%f', 0, 0, 0, b)
+	)
 end
 
 function set_cache_state(kind, c)
@@ -424,7 +433,6 @@ function master()
 		end
 	end
 
-	-- TODO: don't obstruct with `console.lua` ?
 	state.osd = mp.create_osd_overlay("ass-events")
 	mp.observe_property("osd-dimensions", "native", set_dpy_size)
 	mp.observe_property('demuxer-cache-state', 'native', set_cache_state)
