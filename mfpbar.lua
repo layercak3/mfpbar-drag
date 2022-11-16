@@ -40,6 +40,8 @@ local state = {
 	},
 }
 
+-- TODO: use percentage instread of pixels for pbar_h etc ?
+-- TODO: allow option to disable minimized bar when fullscreen ?
 local opt = {
 	pbar_h = 12,
 	pbar_minimized_h = 4,
@@ -136,14 +138,15 @@ function draw_rect(x, y, w, h, color, opt)
 end
 
 function draw_text(x, y, size, text, opt)
-	opt = opt or {}
 	local s = string.format('{\\pos(%d, %d)}{\\fs%d}', x, y, size)
+	opt = opt or {}
 	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
 	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
 	s = s .. text
 	draw_append(s)
 end
 
+-- TODO: make this less janky.
 function pbar_draw()
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
@@ -210,7 +213,10 @@ function pbar_draw()
 	if not state.pbar_isminimized then
 		-- L2: timeline
 		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
+		-- LHS: current playback position
 		draw_text(pad, dpy_h - (ypos + fs), fs, time, fopt)
+		-- TODO: options to select what to display on the RHS
+		-- RHS: time remaining
 		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}-" .. trem, fopt)
 		ypos = ypos + fs + (fopt.bw * 2)
 
@@ -316,7 +322,7 @@ function pbar_update(mouse)
 			-- clear everything
 			state.osd.data = ''
 			render()
-			mp.unobserve_property(pbar_draw) -- don't draw timeline
+			mp.unobserve_property(pbar_draw)
 		end
 
 		mp.remove_key_binding('pressed_down')
@@ -329,6 +335,7 @@ end
 
 function pbar_minimize()
 	if not state.pbar_isminimized then
+		-- HACK: send a fake mouse event
 		pbar_update({ hover = false, y = -1 })
 	end
 end
@@ -401,6 +408,7 @@ function master()
 		end
 	end
 
+	-- TODO: don't obstruct with `console.lua` ?
 	state.osd = mp.create_osd_overlay("ass-events")
 	mp.observe_property("osd-dimensions", "native", set_dpy_size)
 	mp.observe_property('demuxer-cache-state', 'native', set_cache_state)
