@@ -48,7 +48,10 @@ local opt = {
 	cachebar_color = "1C6C89",
 	hover_bar_color = "BDAE93",
 	font_size = 16,
-	font_pad = 4,
+	font_pad = 4, -- TODO: rename this to hpad ?
+	-- TODO: add a configurable vpad as well ?
+	font_border_width = 2,
+	font_border_color = "000000",
 	proximity = 40,
 	preview_border_width = 2,
 	preview_border_color = "BDAE93",
@@ -132,9 +135,12 @@ function draw_rect(x, y, w, h, color, opt)
 	)
 end
 
-function draw_text(x, y, size, text)
-	-- TODO: make text border and border-color configurable ?
-	local s = string.format('{\\pos(%d, %d)}{\\bord0}{\\fs%d}%s', x, y, size, text)
+function draw_text(x, y, size, text, opt)
+	opt = opt or {}
+	local s = string.format('{\\pos(%d, %d)}{\\fs%d}', x, y, size)
+	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
+	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
+	s = s .. text
 	draw_append(s)
 end
 
@@ -203,9 +209,10 @@ function pbar_draw()
 
 	if not state.pbar_isminimized then
 		-- L2: timeline
-		draw_text(pad, dpy_h - (ypos + fs), fs, time)
-		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}-" .. trem)
-		ypos = ypos + fs
+		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
+		draw_text(pad, dpy_h - (ypos + fs), fs, time, fopt)
+		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}-" .. trem, fopt)
+		ypos = ypos + fs + (fopt.bw * 2)
 
 		if duration then
 			assert(state.mouse)
@@ -222,9 +229,9 @@ function pbar_draw()
 			x = math.min(dpy_w - (pad + fw), x)
 			draw_text(
 				x, dpy_h - (ypos + fs), fs,
-				"{\\an8}" .. hover_text
+				"{\\an8}" .. hover_text, fopt
 			)
-			ypos = ypos + fs
+			ypos = ypos + fs + (fopt.bw * 2)
 
 			-- L3: chapter name
 			local cname = clist and grab_chapter_name_at(hover_sec) or nil
@@ -235,9 +242,9 @@ function pbar_draw()
 				x = math.min(dpy_w - (pad + fw), x)
 				draw_text(
 					x, dpy_h - (ypos + fs),
-					fs, "{\\an8}" .. cname
+					fs, "{\\an8}" .. cname, fopt
 				)
-				ypos = ypos + fs
+				ypos = ypos + fs + (fopt.bw * 2)
 			end
 
 			-- L4: preview thumbnail
