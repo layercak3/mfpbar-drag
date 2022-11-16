@@ -174,7 +174,7 @@ function pbar_draw()
 
 	if duration then
 		-- L1: cache cusor
-		if state.cached_ranges then
+		if state.cached_ranges and opt.cachebar_h > 0 then
 			assert(#state.cached_ranges > 0)
 			local ch = opt.cachebar_h
 			for _, range in ipairs(state.cached_ranges) do
