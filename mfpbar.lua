@@ -104,6 +104,14 @@ function round(n)
 	return math.floor(n + 0.5)
 end
 
+function hover_to_sec(mx, dw, duration)
+	assert(duration)
+	local n = duration * ((mx + 0.5) / dw)
+	n = math.max(n, 0)
+	n = math.min(n, duration)
+	return n
+end
+
 function render()
 	state.osd:update()
 	state.osd.data = nil
@@ -231,7 +239,7 @@ function pbar_draw()
 			assert(state.mouse)
 
 			-- L0-2: hovered timeline
-			local hover_sec = duration * ((state.mouse.x + 0.5) / dpy_w)
+			local hover_sec = hover_to_sec(state.mouse.x, dpy_w, duration)
 			local hover_text = format_time(hover_sec)
 			draw_rect(
 				math.max(state.mouse.x - 1, 0), dpy_h - ypos,
@@ -351,8 +359,9 @@ function pbar_pressed()
 	assert(state.mouse.hover)
 	assert(state.pbar_isactive)
 	if state.duration then
-		local hover_sec = state.duration * ((state.mouse.x + 0.5) / state.dpy_w)
-		mp.set_property("time-pos", hover_sec);
+		mp.set_property("time-pos",  hover_to_sec(
+			state.mouse.x, state.dpy_w, state.duration
+		));
 	end
 end
 
