@@ -227,18 +227,16 @@ function pbar_draw()
 			ypos = ypos + fs
 
 			-- L3: chapter name
-			local cname = grab_chapter_name_at(hover_sec)
-			if clist and cname then
+			local cname = clist and grab_chapter_name_at(hover_sec) or nil
+			if cname then
 				assert(cname)
 				local fw = string.len(cname) * fs * 0.28 -- guesstimate again
 				local x = math.max(state.mouse.x, pad + fw)
 				x = math.min(dpy_w - (pad + fw), x)
-				if cname then
-					draw_text(
-						x, dpy_h - (ypos + fs),
-						fs, "{\\an8}" .. cname
-					)
-				end
+				draw_text(
+					x, dpy_h - (ypos + fs),
+					fs, "{\\an8}" .. cname
+				)
 				ypos = ypos + fs
 			end
 
