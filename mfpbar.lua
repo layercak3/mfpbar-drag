@@ -106,12 +106,14 @@ function round(n)
 	return math.floor(n + 0.5)
 end
 
+function clamp(n, min, max)
+	return math.min(math.max(n, min), max)
+end
+
 function hover_to_sec(mx, dw, duration)
 	assert(duration)
 	local n = duration * ((mx + 0.5) / dw)
-	n = math.max(n, 0)
-	n = math.min(n, duration)
-	return n
+	return clamp(n, 0, duration)
 end
 
 function render()
@@ -247,8 +249,7 @@ function pbar_draw()
 				2, ypos, opt.hover_bar_color
 			)
 			local fw = fs * 2 -- guesstimate ¯\_(ツ)_/¯
-			local x = math.max(state.mouse.x, pad + fw)
-			x = math.min(dpy_w - (pad + fw), x)
+			local x = clamp(state.mouse.x, pad + fw, dpy_w - (pad + fw))
 			draw_text(
 				x, dpy_h - (ypos + fs), fs,
 				"{\\an8}" .. hover_text, fopt
@@ -260,8 +261,7 @@ function pbar_draw()
 			if cname then
 				assert(cname)
 				local fw = string.len(cname) * fs * 0.28 -- guesstimate again
-				local x = math.max(state.mouse.x, pad + fw)
-				x = math.min(dpy_w - (pad + fw), x)
+				local x = clamp(state.mouse.x, pad + fw, dpy_w - (pad + fw))
 				draw_text(
 					x, dpy_h - (ypos + fs),
 					fs, "{\\an8}" .. cname, fopt
@@ -277,8 +277,7 @@ function pbar_draw()
 				local th = state.thumbfast.height
 				local y = dpy_h - (ypos + th + pw)
 				local x = state.mouse.x - (tw / 2)
-				x = math.max(hpad, x)
-				x = math.min(dpy_w - (hpad + tw), x)
+				x = clamp(x, hpad, dpy_w - (hpad + tw))
 				mp.commandv(
 					"script-message-to", "thumbfast", "thumb",
 					hover_sec, x, y
