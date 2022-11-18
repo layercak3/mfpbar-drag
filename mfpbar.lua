@@ -62,7 +62,7 @@ local opt = {
 	chapter_marker_color = "BDAE93",
 	chapter_marker_border_width = 1,
 	chapter_marker_border_color = "161616",
-	autohide = 3,
+	minimize_timeout = 3,
 }
 
 -- function implementation
@@ -321,9 +321,9 @@ function pbar_update(mouse)
 		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
 		mp.observe_property("time-pos", nil, pbar_draw)
 		if state.timeout then
-			assert(opt.autohide > 0)
+			assert(opt.minimize_timeout > 0)
 			state.timeout:kill()
-			state.timeout.timeout = opt.autohide
+			state.timeout.timeout = opt.minimize_timeout
 			state.timeout:resume()
 		end
 	elseif state.pbar_isactive then
@@ -443,8 +443,8 @@ function master()
 
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
-	if opt.autohide > 0 then
-		state.timeout = mp.add_timeout(opt.autohide, pbar_minimize)
+	if opt.minimize_timeout > 0 then
+		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize)
 	end
 	if opt.pbar_minimized_height > 0 then
 		mp.observe_property("time-pos", nil, pbar_draw)
