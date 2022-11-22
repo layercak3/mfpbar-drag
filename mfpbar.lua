@@ -300,6 +300,30 @@ function pbar_draw()
 	render()
 end
 
+function pbar_minimize()
+	if not state.pbar_isminimized then
+		if opt.pbar_minimized_height > 0 then
+			state.pbar_isactive = true
+			state.pbar_isminimized = true
+			pbar_draw()
+		else
+			assert(state.pbar_isactive)
+			state.pbar_isactive = false
+			state.pbar_isminimized = false
+			-- clear everything
+			state.osd.data = ''
+			render()
+			mp.unobserve_property(pbar_draw)
+		end
+
+		mp.remove_key_binding('pbar_pressed')
+		state.mouse = nil
+		if state.thumbfast.available then
+			mp.commandv("script-message-to", "thumbfast", "clear")
+		end
+	end
+end
+
 function pbar_update(mouse)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
@@ -325,33 +349,8 @@ function pbar_update(mouse)
 			state.timeout.timeout = opt.minimize_timeout
 			state.timeout:resume()
 		end
-	elseif state.pbar_isactive then
-		if opt.pbar_minimized_height > 0 then
-			state.pbar_isactive = true
-			state.pbar_isminimized = true
-			pbar_draw()
-		else
-			assert(state.pbar_isactive)
-			state.pbar_isactive = false
-			state.pbar_isminimized = false
-			-- clear everything
-			state.osd.data = ''
-			render()
-			mp.unobserve_property(pbar_draw)
-		end
-
-		mp.remove_key_binding('pbar_pressed')
-		state.mouse = nil
-		if state.thumbfast.available then
-			mp.commandv("script-message-to", "thumbfast", "clear")
-		end
-	end
-end
-
-function pbar_minimize()
-	if not state.pbar_isminimized then
-		-- HACK: send a fake mouse event
-		pbar_update({ hover = false, y = -1 })
+	else
+		pbar_minimize()
 	end
 end
 
