@@ -74,7 +74,7 @@ local opt = {
 
 -- ASS uses BBGGRR format, which fucking sucks
 function rgb_to_ass(color)
-	if not string.len(color) == 6 then
+	if (not string.len(color) == 6) then
 		msg.error("Invalid color: " .. color)
 		return "FFFFFF"
 	end
@@ -89,7 +89,7 @@ function grab_chapter_name_at(sec)
 	local name = nil
 	local psec = -1
 	for _, c in ipairs(state.chapters) do
-		if sec > c.time then
+		if (sec > c.time) then
 			name = c.title
 		end
 		assert(psec < c.time)
@@ -127,7 +127,7 @@ function render()
 end
 
 function draw_append(text)
-	if state.osd.data == nil then
+	if (state.osd.data == nil) then
 		state.osd.data = text
 	else
 		state.osd.data = state.osd.data .. '\n' .. text
@@ -178,7 +178,7 @@ function pbar_draw()
 
 	assert(state.pbar == pbar_minimized or state.pbar == pbar_active)
 
-	if play_pos == nil or dpy_w == 0 or dpy_h == 0 then
+	if (play_pos == nil or dpy_w == 0 or dpy_h == 0) then
 		return
 	end
 
@@ -190,9 +190,9 @@ function pbar_draw()
 	draw_rect(0, dpy_h - (pb_h + ypos), dpy_w * (play_pos/100.0), pb_h, opt.pbar_color)
 	ypos = ypos + pb_h
 
-	if duration then
+	if (duration) then
 		-- L1: cache cusor
-		if state.cached_ranges and opt.cachebar_height > 0 then
+		if (state.cached_ranges and opt.cachebar_height > 0) then
 			assert(#state.cached_ranges > 0)
 			local ch = dpy_h * (opt.cachebar_height / 100)
 			ch = math.max(round(ch), 2)
@@ -208,7 +208,7 @@ function pbar_draw()
 		end
 
 		-- L0-???: chapters
-		if clist and opt.chapter_marker_size > 0 then
+		if (clist and opt.chapter_marker_size > 0) then
 			assert(#clist > 0)
 			local bw = opt.chapter_marker_border_width
 			local tw = opt.chapter_marker_size
@@ -229,7 +229,7 @@ function pbar_draw()
 		end
 	end
 
-	if state.pbar == pbar_active then
+	if (state.pbar == pbar_active) then
 		local fs = opt.font_size
 		local pad = opt.font_pad
 		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
@@ -243,7 +243,7 @@ function pbar_draw()
 		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}" .. rem, fopt)
 		ypos = ypos + fs + (fopt.bw * 2)
 
-		if duration then
+		if (duration) then
 			assert(state.mouse)
 
 			-- L0-2: hovered timeline
@@ -310,7 +310,7 @@ function pbar_update(next_state)
 	local dpy_h = state.dpy_h
 	local mouse = state.mouse
 
-	if dpy_w == 0 or dpy_h == 0 or state.pbar == next_state then
+	if (dpy_w == 0 or dpy_h == 0 or state.pbar == next_state) then
 		return
 	end
 
@@ -324,7 +324,7 @@ function pbar_update(next_state)
 		pbar_draw()
 		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
 		mp.observe_property("time-pos", nil, pbar_draw)
-		if state.timeout then
+		if (state.timeout) then
 			assert(opt.minimize_timeout > 0)
 			state.timeout:kill()
 			state.timeout.timeout = opt.minimize_timeout
@@ -348,7 +348,7 @@ function pbar_update(next_state)
 
 		mp.remove_key_binding('pbar_pressed')
 		state.mouse = nil
-		if state.thumbfast.available then
+		if (state.thumbfast.available) then
 			mp.commandv("script-message-to", "thumbfast", "clear")
 		end
 	end
@@ -365,7 +365,7 @@ end
 function pbar_pressed()
 	assert(state.mouse.hover)
 	assert(state.pbar == pbar_active)
-	if state.duration then
+	if (state.duration) then
 		mp.set_property("time-pos",  hover_to_sec(
 			state.mouse.x, state.dpy_w, state.duration
 		));
@@ -379,7 +379,7 @@ function update_mouse_pos(kind, mouse)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
 
-	if dpy_w == 0 or dpy_h == 0 then
+	if (dpy_w == 0 or dpy_h == 0) then
 		return
 	end
 
@@ -388,7 +388,7 @@ function update_mouse_pos(kind, mouse)
 	assert(mouse)
 
 	-- TODO: ensure there's enough height to draw our stuff ?
-	if mouse.hover and mouse.y > dpy_h - opt.proximity then
+	if (mouse.hover and mouse.y > dpy_h - opt.proximity) then
 		pbar_update(pbar_active)
 	else
 		pbar_minimize_or_hide()
@@ -414,7 +414,7 @@ end
 
 function set_cache_state(kind, c)
 	assert(kind == "demuxer-cache-state")
-	if c == nil then
+	if (c == nil) then
 		state.cached_ranges = nil
 	else
 		local r = c['seekable-ranges']
@@ -433,7 +433,7 @@ end
 
 function set_chapter_list(kind, c)
 	assert(kind == "chapter-list")
-	if c and #c > 0 then
+	if (c and #c > 0) then
 		state.chapters = c
 	else
 		state.chapters = nil
@@ -442,7 +442,7 @@ end
 
 function set_thumbfast(json)
 	local data = utils.parse_json(json)
-	if type(data) ~= "table" or not data.width or not data.height then
+	if (type(data) ~= "table" or not data.width or not data.height) then
 		msg.error("thumbfast-info: received json didn't produce a table with thumbnail information")
 	else
 		state.thumbfast = data
@@ -466,10 +466,10 @@ function master()
 
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
-	if opt.minimize_timeout > 0 then
+	if (opt.minimize_timeout > 0) then
 		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
 	end
-	if opt.pbar_minimized_height > 0 then
+	if (opt.pbar_minimized_height > 0) then
 		state.pbar = pbar_minimized
 		mp.observe_property("time-pos", nil, pbar_draw)
 	end
