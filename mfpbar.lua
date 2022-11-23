@@ -305,33 +305,12 @@ function pbar_draw()
 	render()
 end
 
-function pbar_minimize()
-	if state.pbar == pbar_active then
-		if opt.pbar_minimized_height > 0 then
-			state.pbar = pbar_minimized
-			pbar_draw()
-		else
-			assert(state.pbar ~= pbar_hidden)
-			state.pbar = pbar_hidden
-			-- clear everything
-			state.osd.data = ''
-			render()
-			mp.unobserve_property(pbar_draw)
-		end
-
-		mp.remove_key_binding('pbar_pressed')
-		state.mouse = nil
-		if state.thumbfast.available then
-			mp.commandv("script-message-to", "thumbfast", "clear")
-		end
-	end
-end
-
-function pbar_update(mouse)
+function pbar_update(next_state)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
+	local mouse = state.mouse
 
-	if dpy_w == 0 or dpy_h == 0 then
+	if dpy_w == 0 or dpy_h == 0 or state.pbar == next_state then
 		return
 	end
 
@@ -340,7 +319,7 @@ function pbar_update(mouse)
 	assert(mouse)
 
 	-- TODO: ensure there's enough height to draw our stuff ?
-	if mouse.hover and mouse.y > dpy_h - opt.proximity then
+	if (next_state == pbar_active) then
 		state.pbar = pbar_active
 		pbar_draw()
 		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
@@ -352,7 +331,34 @@ function pbar_update(mouse)
 			state.timeout:resume()
 		end
 	else
-		pbar_minimize()
+		if (next_state == pbar_minimized) then
+			assert(opt.pbar_minimized_height > 0)
+			state.pbar = pbar_minimized
+			pbar_draw()
+		elseif (next_state == pbar_hidden) then
+			assert(state.pbar ~= pbar_hidden)
+			state.pbar = pbar_hidden
+			-- clear everything
+			state.osd.data = ''
+			render()
+			mp.unobserve_property(pbar_draw)
+		else
+			assert(false, "unreachable")
+		end
+
+		mp.remove_key_binding('pbar_pressed')
+		state.mouse = nil
+		if state.thumbfast.available then
+			mp.commandv("script-message-to", "thumbfast", "clear")
+		end
+	end
+end
+
+function pbar_minimize_or_hide()
+	if (opt.pbar_minimized_height > 0) then
+		pbar_update(pbar_minimized)
+	else
+		pbar_update(pbar_hidden)
 	end
 end
 
@@ -369,7 +375,24 @@ end
 function update_mouse_pos(kind, mouse)
 	assert(kind == "mouse-pos")
 	state.mouse = mouse
-	pbar_update(mouse)
+
+	local dpy_w = state.dpy_w
+	local dpy_h = state.dpy_h
+
+	if dpy_w == 0 or dpy_h == 0 then
+		return
+	end
+
+	assert(dpy_w > 0)
+	assert(dpy_h > 0)
+	assert(mouse)
+
+	-- TODO: ensure there's enough height to draw our stuff ?
+	if mouse.hover and mouse.y > dpy_h - opt.proximity then
+		pbar_update(pbar_active)
+	else
+		pbar_minimize_or_hide()
+	end
 end
 
 function set_dpy_size(kind, osd)
@@ -444,7 +467,7 @@ function master()
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
 	if opt.minimize_timeout > 0 then
-		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize)
+		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
 	end
 	if opt.pbar_minimized_height > 0 then
 		state.pbar = pbar_minimized
