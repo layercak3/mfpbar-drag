@@ -19,14 +19,19 @@ local msg = require('mp.msg')
 local utils = require('mp.utils')
 local mpopt = require('mp.options')
 
+-- poor man's enum
+
+local pbar_hidden      = 0
+local pbar_minimized   = 1
+local pbar_active      = 2
+
 -- globals
 
 local state = {
 	osd = nil,
 	dpy_w = 0,
 	dpy_h = 0,
-	pbar_isactive = false,
-	pbar_isminimized = true,
+	pbar = pbar_hidden,
 	mouse = nil,
 	cached_ranges = nil,
 	duration = nil,
@@ -171,14 +176,14 @@ function pbar_draw()
 	local duration = state.duration
 	local clist = state.chapters
 
-	assert(state.pbar_isactive or state.pbar_isminimized)
+	assert(state.pbar == pbar_minimized or state.pbar == pbar_active)
 
 	if play_pos == nil or dpy_w == 0 or dpy_h == 0 then
 		return
 	end
 
 	-- L0: playback cursor
-	local pb_h = state.pbar_isminimized and opt.pbar_minimized_height or opt.pbar_height
+	local pb_h = state.pbar == pbar_minimized and opt.pbar_minimized_height or opt.pbar_height
 	assert(pb_h > 0)
 	pb_h = dpy_h * (pb_h / 100)
 	pb_h = math.max(round(pb_h), 4)
@@ -224,7 +229,7 @@ function pbar_draw()
 		end
 	end
 
-	if not state.pbar_isminimized then
+	if state.pbar == pbar_active then
 		local fs = opt.font_size
 		local pad = opt.font_pad
 		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
@@ -301,15 +306,13 @@ function pbar_draw()
 end
 
 function pbar_minimize()
-	if not state.pbar_isminimized then
+	if state.pbar == pbar_active then
 		if opt.pbar_minimized_height > 0 then
-			state.pbar_isactive = true
-			state.pbar_isminimized = true
+			state.pbar = pbar_minimized
 			pbar_draw()
 		else
-			assert(state.pbar_isactive)
-			state.pbar_isactive = false
-			state.pbar_isminimized = false
+			assert(state.pbar ~= pbar_hidden)
+			state.pbar = pbar_hidden
 			-- clear everything
 			state.osd.data = ''
 			render()
@@ -338,8 +341,7 @@ function pbar_update(mouse)
 
 	-- TODO: ensure there's enough height to draw our stuff ?
 	if mouse.hover and mouse.y > dpy_h - opt.proximity then
-		state.pbar_isminimized = false
-		state.pbar_isactive = true
+		state.pbar = pbar_active
 		pbar_draw()
 		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
 		mp.observe_property("time-pos", nil, pbar_draw)
@@ -356,7 +358,7 @@ end
 
 function pbar_pressed()
 	assert(state.mouse.hover)
-	assert(state.pbar_isactive)
+	assert(state.pbar == pbar_active)
 	if state.duration then
 		mp.set_property("time-pos",  hover_to_sec(
 			state.mouse.x, state.dpy_w, state.duration
@@ -445,6 +447,7 @@ function master()
 		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize)
 	end
 	if opt.pbar_minimized_height > 0 then
+		state.pbar = pbar_minimized
 		mp.observe_property("time-pos", nil, pbar_draw)
 	end
 end
