@@ -39,6 +39,7 @@ local state = {
 	timeout = nil,
 	time_observed = false,
 	press_bounded = false,
+	fullscreen = false,
 	thumbfast = {
 		width = 0,
 		height = 0,
@@ -47,11 +48,11 @@ local state = {
 	},
 }
 
--- TODO: allow option to disable minimized bar when fullscreen ?
 local opt = {
 	pbar_height = 2,
 	pbar_minimized_height = 0.5,
 	pbar_color = "CCCCCC",
+	pbar_fullscreen_hide = true,
 	cachebar_height = 0.24,
 	cachebar_color = "1C6C89",
 	-- TODO: allow selecting "duration" as well ?
@@ -370,7 +371,7 @@ function pbar_update(next_state)
 end
 
 function pbar_minimize_or_hide()
-	if (opt.pbar_minimized_height > 0) then
+	if (opt.pbar_minimized_height > 0 and not (opt.pbar_fullscreen_hide and state.fullscreen)) then
 		pbar_update(pbar_minimized)
 	else
 		pbar_update(pbar_hidden)
@@ -408,6 +409,12 @@ function update_mouse_pos(kind, mouse)
 	else
 		pbar_minimize_or_hide()
 	end
+end
+
+function update_fullscreen(kind, fs)
+	assert(kind == "fullscreen")
+	state.fullscreen = fs
+	pbar_minimize_or_hide()
 end
 
 function set_dpy_size(kind, osd)
@@ -486,6 +493,7 @@ function master()
 	mp.observe_property('duration', 'native', set_duration)
 	mp.observe_property('chapter-list', 'native', set_chapter_list)
 	mp.register_script_message("thumbfast-info", set_thumbfast)
+	mp.observe_property('fullscreen', 'native', update_fullscreen)
 
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
