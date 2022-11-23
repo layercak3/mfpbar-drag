@@ -308,7 +308,6 @@ end
 function pbar_update(next_state)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
-	local mouse = state.mouse
 
 	if (dpy_w == 0 or dpy_h == 0 or state.pbar == next_state) then
 		return
@@ -316,9 +315,7 @@ function pbar_update(next_state)
 
 	assert(dpy_w > 0)
 	assert(dpy_h > 0)
-	assert(mouse)
 
-	-- TODO: ensure there's enough height to draw our stuff ?
 	if (next_state == pbar_active) then
 		state.pbar = pbar_active
 		pbar_draw()
