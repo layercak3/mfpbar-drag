@@ -464,6 +464,14 @@ function set_thumbfast(json)
 	end
 end
 
+function start_minimized(kind, thing)
+	assert(kind == 'current-window-scale')
+	if thing and state.pbar == pbar_hidden then
+		pbar_update(pbar_minimized)
+		mp.unobserve_property(start_minimized)
+	end
+end
+
 function master()
 	mpopt.read_options(opt, "mfpbar")
 	for k,v in pairs(opt) do
@@ -485,7 +493,10 @@ function master()
 		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
 	end
 	if (opt.pbar_minimized_height > 0) then
-		pbar_update(pbar_minimized)
+		-- HACK: mpv doesn't open the window instantly by default.
+		-- so wait for 'current-window-scale' as a hacky hook for when
+		-- the window opens.
+		mp.observe_property('current-window-scale', 'native', start_minimized)
 	end
 end
 
