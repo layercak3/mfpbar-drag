@@ -37,6 +37,7 @@ local state = {
 	duration = nil,
 	chapters = nil,
 	timeout = nil,
+	time_observed = false,
 	thumbfast = {
 		width = 0,
 		height = 0,
@@ -316,12 +317,15 @@ function pbar_update(next_state)
 	assert(dpy_w > 0)
 	assert(dpy_h > 0)
 
+	-- TODO: reduce latency when pbar is active
 	if (next_state == pbar_active) then
 		state.pbar = pbar_active
 		pbar_draw()
 		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
-		-- TODO: potentially observing the same thing twice. this okay?
-		mp.observe_property("time-pos", nil, pbar_draw)
+		if (not state.time_observed) then
+			mp.observe_property("time-pos", nil, pbar_draw)
+			state.time_observed = true
+		end
 		if (state.timeout) then
 			assert(opt.minimize_timeout > 0)
 			state.timeout:kill()
@@ -333,14 +337,19 @@ function pbar_update(next_state)
 			assert(opt.pbar_minimized_height > 0)
 			state.pbar = pbar_minimized
 			pbar_draw()
-			mp.observe_property("time-pos", nil, pbar_draw)
+			if (not state.time_observed) then
+				mp.observe_property("time-pos", nil, pbar_draw)
+				state.time_observed = true
+			end
 		elseif (next_state == pbar_hidden) then
 			assert(state.pbar ~= pbar_hidden)
 			state.pbar = pbar_hidden
 			-- clear everything
 			state.osd.data = ''
 			render()
+			assert(state.time_observed)
 			mp.unobserve_property(pbar_draw)
+			state.time_observed = false
 		else
 			assert(false, "unreachable")
 		end
