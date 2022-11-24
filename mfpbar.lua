@@ -320,6 +320,7 @@ function pbar_update(next_state)
 		state.pbar = pbar_active
 		pbar_draw()
 		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
+		-- TODO: potentially observing the same thing twice. this okay?
 		mp.observe_property("time-pos", nil, pbar_draw)
 		if (state.timeout) then
 			assert(opt.minimize_timeout > 0)
@@ -332,6 +333,7 @@ function pbar_update(next_state)
 			assert(opt.pbar_minimized_height > 0)
 			state.pbar = pbar_minimized
 			pbar_draw()
+			mp.observe_property("time-pos", nil, pbar_draw)
 		elseif (next_state == pbar_hidden) then
 			assert(state.pbar ~= pbar_hidden)
 			state.pbar = pbar_hidden
@@ -467,8 +469,7 @@ function master()
 		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
 	end
 	if (opt.pbar_minimized_height > 0) then
-		state.pbar = pbar_minimized
-		mp.observe_property("time-pos", nil, pbar_draw)
+		pbar_update(pbar_minimized)
 	end
 end
 
