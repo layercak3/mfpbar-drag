@@ -38,6 +38,7 @@ local state = {
 	chapters = nil,
 	timeout = nil,
 	time_observed = false,
+	press_bounded = false,
 	thumbfast = {
 		width = 0,
 		height = 0,
@@ -321,7 +322,10 @@ function pbar_update(next_state)
 	if (next_state == pbar_active) then
 		state.pbar = pbar_active
 		pbar_draw()
-		mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
+		if (not state.press_bounded) then
+			mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
+			state.press_bounded = true
+		end
 		if (not state.time_observed) then
 			mp.observe_property("time-pos", nil, pbar_draw)
 			state.time_observed = true
@@ -354,7 +358,10 @@ function pbar_update(next_state)
 			assert(false, "unreachable")
 		end
 
-		mp.remove_key_binding('pbar_pressed')
+		if (state.press_bounded) then
+			mp.remove_key_binding('pbar_pressed')
+			state.press_bounded = false
+		end
 		state.mouse = nil
 		if (state.thumbfast.available) then
 			mp.commandv("script-message-to", "thumbfast", "clear")
