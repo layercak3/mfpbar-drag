@@ -479,7 +479,7 @@ function start_minimized(kind, thing)
 	end
 end
 
-function master()
+function init()
 	mpopt.read_options(opt, "mfpbar")
 	for k,v in pairs(opt) do
 		if string.find(k, "_color$") then
@@ -508,4 +508,4 @@ function master()
 	end
 end
 
-master()
+init()
