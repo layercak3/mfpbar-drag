@@ -56,6 +56,8 @@ local opt = {
 	pbar_fullscreen_hide = true,
 	cachebar_height = 0.24,
 	cachebar_color = "1C6C89",
+	cachebar_uncached_color = "CC3A2A",
+	cachebar_uncached_alpha = "70",
 	-- TODO: allow selecting "duration" as well ?
 	timeline_rhs = "time-remaining",
 	hover_bar_color = "BDAE93",
@@ -203,6 +205,11 @@ function pbar_draw()
 			assert(#state.cached_ranges > 0)
 			local ch = dpy_h * (opt.cachebar_height / 100)
 			ch = math.max(round(ch), 2)
+			draw_rect(
+				0, dpy_h - (ch + ypos), dpy_w, ch,
+				opt.cachebar_uncached_color,
+				{ alpha = opt.cachebar_uncached_alpha }
+			)
 			for _, range in ipairs(state.cached_ranges) do
 				local s = range['start']
 				local e = range['end']
