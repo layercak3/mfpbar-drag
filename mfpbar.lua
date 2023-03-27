@@ -330,6 +330,9 @@ function pbar_update(next_state)
 	assert(dpy_w > 0)
 	assert(dpy_h > 0)
 
+	local statestr = { [pbar_active] = "active", [pbar_minimized] = "minimized", [pbar_hidden] = "hidden" }
+	msg.debug('[UPDATE]: ', statestr[state.pbar], '=> ', statestr[next_state]);
+
 	-- TODO: reduce latency when pbar is active
 	if (next_state == pbar_active) then
 		state.pbar = pbar_active
@@ -402,6 +405,7 @@ end
 function update_mouse_pos(kind, mouse)
 	assert(kind == "mouse-pos")
 	state.mouse = mouse
+	msg.debug('[MOUSE] hover = ', mouse.hover, ' x = ', mouse.x, ' y = ', mouse.y)
 
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
@@ -425,6 +429,7 @@ end
 function update_fullscreen(kind, fs)
 	assert(kind == "fullscreen")
 	state.fullscreen = fs
+	msg.debug('[FULLSCREEN] fs = ', fs)
 	pbar_minimize_or_hide()
 end
 
@@ -434,6 +439,7 @@ function set_dpy_size(kind, osd)
 	state.osd.res_x = osd.w
 	state.dpy_h     = osd.h
 	state.osd.res_y = osd.h
+	msg.debug('[DPY] w = ', osd.w, ' h = ', osd.h)
 	-- HACK: ensure we don't obstruct the console (excluding the preview and hovered timeline)
 	-- the shared_script_property_* functions are documented as undocumented :)
 	-- and users are discouraged to use them, but whatever...
@@ -484,7 +490,9 @@ end
 
 function start_minimized(kind, thing)
 	assert(kind == 'current-window-scale')
+	msg.debug("[WIN-SCALE]", thing, state.pbar)
 	if thing and state.pbar == pbar_hidden then
+		msg.debug("[WIN-SCALE] minimizing")
 		pbar_update(pbar_minimized)
 		mp.unobserve_property(start_minimized)
 	end
