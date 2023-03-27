@@ -446,6 +446,12 @@ function set_dpy_size(kind, osd)
 	state.dpy_h     = osd.h
 	state.osd.res_y = osd.h
 	msg.debug('[DPY] w = ', osd.w, ' h = ', osd.h)
+
+	-- HACK: when display dimention changes, we need to update
+	-- mouse logic so that it doesn't flash junk on screen.
+	-- See: https://codeberg.org/NRK/mpv-toolbox/issues/9
+	update_mouse_pos("mouse-pos", { hover = false, x = 0, y = 0 })
+
 	-- HACK: ensure we don't obstruct the console (excluding the preview and hovered timeline)
 	-- the shared_script_property_* functions are documented as undocumented :)
 	-- and users are discouraged to use them, but whatever...
