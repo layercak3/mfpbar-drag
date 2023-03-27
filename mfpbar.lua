@@ -21,9 +21,10 @@ local mpopt = require('mp.options')
 
 -- poor man's enum
 
-local pbar_hidden      = 0
-local pbar_minimized   = 1
-local pbar_active      = 2
+local pbar_uninit      = 0
+local pbar_hidden      = 1
+local pbar_minimized   = 2
+local pbar_active      = 3
 
 -- globals
 
@@ -31,7 +32,7 @@ local state = {
 	osd = nil,
 	dpy_w = 0,
 	dpy_h = 0,
-	pbar = pbar_hidden,
+	pbar = pbar_uninit,
 	mouse = nil,
 	cached_ranges = nil,
 	duration = nil,
@@ -323,14 +324,19 @@ function pbar_update(next_state)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
 
-	if (dpy_w == 0 or dpy_h == 0 or state.pbar == next_state) then
+	if (dpy_w == 0 or dpy_h == 0 or
+	    state.pbar == next_state or state.pbar == pbar_uninit)
+	then
 		return
 	end
 
 	assert(dpy_w > 0)
 	assert(dpy_h > 0)
 
-	local statestr = { [pbar_active] = "active", [pbar_minimized] = "minimized", [pbar_hidden] = "hidden" }
+	local statestr = {
+		[pbar_uninit] = "uninit", [pbar_active] = "active",
+		[pbar_minimized] = "minimized", [pbar_hidden] = "hidden"
+	}
 	msg.debug('[UPDATE]: ', statestr[state.pbar], '=> ', statestr[next_state]);
 
 	-- TODO: reduce latency when pbar is active
@@ -488,13 +494,17 @@ function set_thumbfast(json)
 	end
 end
 
-function start_minimized(kind, thing)
+function pbar_init(kind, thing)
 	assert(kind == 'current-window-scale')
 	msg.debug("[WIN-SCALE]", thing, state.pbar)
-	if thing and state.pbar == pbar_hidden then
-		msg.debug("[WIN-SCALE] minimizing")
-		pbar_update(pbar_minimized)
-		mp.unobserve_property(start_minimized)
+
+	if thing then
+		assert(state.pbar == pbar_uninit)
+		state.pbar = pbar_hidden
+		if (opt.pbar_minimized_height > 0) then
+			pbar_update(pbar_minimized)
+		end
+		mp.unobserve_property(pbar_init)
 	end
 end
 
@@ -519,12 +529,11 @@ function init()
 	if (opt.minimize_timeout > 0) then
 		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
 	end
-	if (opt.pbar_minimized_height > 0) then
-		-- HACK: mpv doesn't open the window instantly by default.
-		-- so wait for 'current-window-scale' as a hacky hook for when
-		-- the window opens.
-		mp.observe_property('current-window-scale', 'native', start_minimized)
-	end
+
+	-- HACK: mpv doesn't open the window instantly by default.
+	-- so wait for 'current-window-scale' as a hacky hook for when
+	-- the window opens.
+	mp.observe_property('current-window-scale', 'native', pbar_init)
 end
 
 init()
