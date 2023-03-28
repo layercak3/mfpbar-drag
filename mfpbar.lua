@@ -486,6 +486,7 @@ function set_chapter_list(kind, c)
 	assert(kind == "chapter-list")
 	if (c and #c > 0) then
 		state.chapters = c
+		table.sort(state.chapters, function(a, b) return a.time < b.time end)
 	else
 		state.chapters = nil
 	end
