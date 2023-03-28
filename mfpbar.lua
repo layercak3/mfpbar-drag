@@ -99,7 +99,7 @@ function grab_chapter_name_at(sec)
 		if (sec > c.time) then
 			name = c.title
 		end
-		assert(psec < c.time)
+		assert(psec <= c.time)
 		psec = c.time
 	end
 	return name
