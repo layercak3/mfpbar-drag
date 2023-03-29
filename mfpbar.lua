@@ -449,6 +449,12 @@ function update_fullscreen(kind, fs)
 	pbar_minimize_or_hide()
 end
 
+function update_focus(kind, foc)
+	zassert(kind == "focused")
+	msg.debug('[FOCUS] focus = ', foc)
+	state.mouse_prev = { hover = false, x = 0, y = 0 }
+end
+
 function set_dpy_size(kind, osd)
 	zassert(kind == "osd-dimensions")
 	state.dpy_w     = osd.w
@@ -542,6 +548,7 @@ function init()
 	mp.observe_property('chapter-list', 'native', set_chapter_list)
 	mp.register_script_message("thumbfast-info", set_thumbfast)
 	mp.observe_property('fullscreen', 'native', update_fullscreen)
+	mp.observe_property('focused', 'native', update_focus)
 
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
