@@ -34,6 +34,7 @@ local state = {
 	dpy_h = 0,
 	pbar = pbar_uninit,
 	mouse = nil,
+	mouse_prev = nil,
 	cached_ranges = nil,
 	duration = nil,
 	chapters = nil,
@@ -412,8 +413,13 @@ function pbar_pressed()
 	end
 end
 
+function mouse_isactive(m)
+	return m.hover and math.abs(m.y - state.dpy_h) < opt.proximity
+end
+
 function update_mouse_pos(kind, mouse)
 	zassert(kind == "mouse-pos")
+	state.mouse_prev = state.mouse or { hover = false }
 	state.mouse = mouse
 	msg.debug('[MOUSE] hover = ', mouse.hover, ' x = ', mouse.x, ' y = ', mouse.y)
 
@@ -429,7 +435,7 @@ function update_mouse_pos(kind, mouse)
 	zassert(mouse)
 
 	-- TODO: ensure there's enough height to draw our stuff ?
-	if (mouse.hover and mouse.y > dpy_h - opt.proximity) then
+	if (mouse_isactive(state.mouse_prev) and mouse_isactive(mouse)) then
 		pbar_update(pbar_active)
 	else
 		pbar_minimize_or_hide()
@@ -450,11 +456,6 @@ function set_dpy_size(kind, osd)
 	state.dpy_h     = osd.h
 	state.osd.res_y = osd.h
 	msg.debug('[DPY] w = ', osd.w, ' h = ', osd.h)
-
-	-- HACK: when display dimention changes, we need to update
-	-- mouse logic so that it doesn't flash junk on screen.
-	-- See: https://codeberg.org/NRK/mpv-toolbox/issues/9
-	update_mouse_pos("mouse-pos", { hover = false, x = 0, y = 0 })
 
 	-- HACK: ensure we don't obstruct the console (excluding the preview and hovered timeline)
 	-- the shared_script_property_* functions are documented as undocumented :)
