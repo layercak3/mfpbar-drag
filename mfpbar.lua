@@ -356,12 +356,6 @@ function pbar_update(next_state)
 			mp.observe_property("time-pos", nil, pbar_draw)
 			state.time_observed = true
 		end
-		if (state.timeout) then
-			zassert(opt.minimize_timeout > 0)
-			state.timeout:kill()
-			state.timeout.timeout = opt.minimize_timeout
-			state.timeout:resume()
-		end
 	else
 		if (next_state == pbar_minimized) then
 			zassert(opt.pbar_minimized_height > 0)
@@ -396,6 +390,7 @@ function pbar_update(next_state)
 end
 
 function pbar_minimize_or_hide()
+	msg.debug("[MIN-HIDE]")
 	if (opt.pbar_minimized_height > 0 and not (opt.pbar_fullscreen_hide and state.fullscreen)) then
 		pbar_update(pbar_minimized)
 	else
@@ -436,8 +431,13 @@ function update_mouse_pos(kind, mouse)
 
 	-- TODO: ensure there's enough height to draw our stuff ?
 	if (mouse_isactive(state.mouse_prev) and mouse_isactive(mouse)) then
+		-- TODO: a better way to do this without killing/resuming a
+		-- timer on each mouse update?
+		state.timeout:kill()
+		state.timeout:resume()
 		pbar_update(pbar_active)
 	else
+		state.timeout:kill()
 		pbar_minimize_or_hide()
 	end
 end
@@ -552,8 +552,12 @@ function init()
 
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
+
 	if (opt.minimize_timeout > 0) then
 		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
+		state.timeout:kill() -- update_mouse_pos() will kill/resume this as needed
+	else
+		state.timeout = { kill = function() end, resume = function() end }
 	end
 
 	-- HACK: mpv doesn't open the window instantly by default.
