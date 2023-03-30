@@ -368,8 +368,7 @@ function pbar_update(next_state)
 		elseif (next_state == pbar_hidden) then
 			zassert(state.pbar ~= pbar_hidden)
 			state.pbar = pbar_hidden
-			-- clear everything
-			state.osd.data = ''
+			state.osd.data = '' -- clear everything
 			render()
 			zassert(state.time_observed)
 			mp.unobserve_property(pbar_draw)
