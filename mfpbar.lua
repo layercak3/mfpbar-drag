@@ -85,7 +85,7 @@ local zassert = function() end
 -- function implementation
 
 -- ASS uses BBGGRR format, which fucking sucks
-function rgb_to_ass(color)
+local function rgb_to_ass(color)
 	if (not string.len(color) == 6) then
 		msg.error("Invalid color: " .. color)
 		return "FFFFFF"
@@ -96,7 +96,7 @@ function rgb_to_ass(color)
 	return string.upper(b .. g .. r)
 end
 
-function grab_chapter_name_at(sec)
+local function grab_chapter_name_at(sec)
 	zassert(state.chapters)
 	local name = nil
 	local psec = -1
@@ -110,7 +110,7 @@ function grab_chapter_name_at(sec)
 	return name
 end
 
-function format_time(t)
+local function format_time(t)
 	local h = math.floor(t / (60 * 60))
 	t = t - (h * 60 * 60)
 	local m = math.floor(t / 60)
@@ -118,27 +118,27 @@ function format_time(t)
 	return string.format("%.2d:%.2d:%.2d", h, m, s)
 end
 
-function round(n)
+local function round(n)
 	zassert(n >= 0)
 	return math.floor(n + 0.5)
 end
 
-function clamp(n, min, max)
+local function clamp(n, min, max)
 	return math.min(math.max(n, min), max)
 end
 
-function hover_to_sec(mx, dw, duration)
+local function hover_to_sec(mx, dw, duration)
 	zassert(duration)
 	local n = duration * ((mx + 0.5) / dw)
 	return clamp(n, 0, duration)
 end
 
-function render()
+local function render()
 	state.osd:update()
 	state.osd.data = nil
 end
 
-function draw_append(text)
+local function draw_append(text)
 	if (state.osd.data == nil) then
 		state.osd.data = text
 	else
@@ -146,7 +146,7 @@ function draw_append(text)
 	end
 end
 
-function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
+local function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
 	local s = '{\\pos(0, 0)}'
 	opt = opt or {}
 	s = s .. '{\\1c&' .. color .. '&}'
@@ -160,7 +160,7 @@ function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
 	draw_append(s)
 end
 
-function draw_rect(x, y, w, h, color, opt)
+local function draw_rect(x, y, w, h, color, opt)
 	draw_rect_point(
 		x,      y,
 		x + w,  y,
@@ -170,7 +170,7 @@ function draw_rect(x, y, w, h, color, opt)
 	)
 end
 
-function draw_text(x, y, size, text, opt)
+local function draw_text(x, y, size, text, opt)
 	local s = string.format('{\\pos(%d, %d)}{\\fs%d}', x, y, size)
 	opt = opt or {}
 	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
@@ -180,7 +180,7 @@ function draw_text(x, y, size, text, opt)
 end
 
 -- TODO: make this less janky.
-function pbar_draw()
+local function pbar_draw()
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
 	local ypos = 0
@@ -325,7 +325,7 @@ function pbar_draw()
 	render()
 end
 
-function pbar_update(next_state)
+local function pbar_update(next_state)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
 
@@ -388,7 +388,7 @@ function pbar_update(next_state)
 	end
 end
 
-function pbar_minimize_or_hide()
+local function pbar_minimize_or_hide()
 	msg.debug("[MIN-HIDE]")
 	if (opt.pbar_minimized_height > 0 and not (opt.pbar_fullscreen_hide and state.fullscreen)) then
 		pbar_update(pbar_minimized)
@@ -397,7 +397,7 @@ function pbar_minimize_or_hide()
 	end
 end
 
-function pbar_pressed()
+local function pbar_pressed()
 	zassert(state.mouse.hover)
 	zassert(state.pbar == pbar_active)
 	if (state.duration) then
@@ -407,11 +407,11 @@ function pbar_pressed()
 	end
 end
 
-function mouse_isactive(m)
+local function mouse_isactive(m)
 	return m.hover and math.abs(m.y - state.dpy_h) < opt.proximity
 end
 
-function update_mouse_pos(kind, mouse)
+local function update_mouse_pos(kind, mouse)
 	zassert(kind == "mouse-pos")
 	state.mouse_prev = state.mouse or { hover = false }
 	state.mouse = mouse
@@ -441,20 +441,20 @@ function update_mouse_pos(kind, mouse)
 	end
 end
 
-function update_fullscreen(kind, fs)
+local function update_fullscreen(kind, fs)
 	zassert(kind == "fullscreen")
 	state.fullscreen = fs
 	msg.debug('[FULLSCREEN] fs = ', fs)
 	pbar_minimize_or_hide()
 end
 
-function update_focus(kind, foc)
+local function update_focus(kind, foc)
 	zassert(kind == "focused")
 	msg.debug('[FOCUS] focus = ', foc)
 	state.mouse_prev = { hover = false, x = 0, y = 0 }
 end
 
-function set_dpy_size(kind, osd)
+local function set_dpy_size(kind, osd)
 	zassert(kind == "osd-dimensions")
 	state.dpy_w     = osd.w
 	state.osd.res_x = osd.w
@@ -473,7 +473,7 @@ function set_dpy_size(kind, osd)
 	)
 end
 
-function set_cache_state(kind, c)
+local function set_cache_state(kind, c)
 	zassert(kind == "demuxer-cache-state")
 	if (c == nil) then
 		state.cached_ranges = nil
@@ -487,12 +487,12 @@ function set_cache_state(kind, c)
 	end
 end
 
-function set_duration(kind, d)
+local function set_duration(kind, d)
 	zassert(kind == "duration")
 	state.duration = d
 end
 
-function set_chapter_list(kind, c)
+local function set_chapter_list(kind, c)
 	zassert(kind == "chapter-list")
 	if (c and #c > 0) then
 		state.chapters = c
@@ -502,7 +502,7 @@ function set_chapter_list(kind, c)
 	end
 end
 
-function set_thumbfast(json)
+local function set_thumbfast(json)
 	local data = utils.parse_json(json)
 	if (type(data) ~= "table" or not data.width or not data.height) then
 		msg.error("thumbfast-info: received json didn't produce a table with thumbnail information")
@@ -511,7 +511,7 @@ function set_thumbfast(json)
 	end
 end
 
-function pbar_init(kind, thing)
+local function pbar_init(kind, thing)
 	zassert(kind == 'vo-configured')
 	msg.debug("[VO-CONFIGURED]", thing, state.pbar)
 
@@ -525,7 +525,7 @@ function pbar_init(kind, thing)
 	end
 end
 
-function init()
+local function init()
 	mpopt.read_options(opt, "mfpbar")
 	for k,v in pairs(opt) do
 		if string.find(k, "_color$") then
