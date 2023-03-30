@@ -513,8 +513,8 @@ function set_thumbfast(json)
 end
 
 function pbar_init(kind, thing)
-	zassert(kind == 'current-window-scale')
-	msg.debug("[WIN-SCALE]", thing, state.pbar)
+	zassert(kind == 'vo-configured')
+	msg.debug("[VO-CONFIGURED]", thing, state.pbar)
 
 	if thing then
 		zassert(state.pbar == pbar_uninit)
@@ -557,9 +557,8 @@ function init()
 	end
 
 	-- HACK: mpv doesn't open the window instantly by default.
-	-- so wait for 'current-window-scale' as a hacky hook for when
-	-- the window opens.
-	mp.observe_property('current-window-scale', 'native', pbar_init)
+	-- so wait for 'vo-configured' as a hook for when the window opens.
+	mp.observe_property('vo-configured', 'native', pbar_init)
 end
 
 init()
