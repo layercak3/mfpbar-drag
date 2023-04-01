@@ -325,6 +325,16 @@ local function pbar_draw()
 	render()
 end
 
+local function pbar_pressed()
+	zassert(state.mouse.hover)
+	zassert(state.pbar == pbar_active)
+	if (state.duration) then
+		mp.set_property("time-pos",  hover_to_sec(
+			state.mouse.x, state.dpy_w, state.duration
+		));
+	end
+end
+
 local function pbar_update(next_state)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
@@ -394,16 +404,6 @@ local function pbar_minimize_or_hide()
 		pbar_update(pbar_minimized)
 	else
 		pbar_update(pbar_hidden)
-	end
-end
-
-local function pbar_pressed()
-	zassert(state.mouse.hover)
-	zassert(state.pbar == pbar_active)
-	if (state.duration) then
-		mp.set_property("time-pos",  hover_to_sec(
-			state.mouse.x, state.dpy_w, state.duration
-		));
 	end
 end
 
