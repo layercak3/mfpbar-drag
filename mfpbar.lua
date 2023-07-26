@@ -147,7 +147,7 @@ local function draw_append(text)
 end
 
 local function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
-	local s = '{\\pos(0, 0)}'
+	local s = '{\\pos(0, 0)\\an7}'
 	opt = opt or {}
 	s = s .. '{\\1c&' .. color .. '&}'
 	s = s .. '{\\1a&' .. (opt.alpha or "00") .. '&}'
@@ -257,7 +257,7 @@ local function pbar_draw()
 		-- L2: timeline
 		-- LHS: current playback position
 		local time = mp.get_property_osd("time-pos", "00:00:00")
-		draw_text(pad, dpy_h - (ypos + fs), fs, time, fopt)
+		draw_text(pad, dpy_h - (ypos + fs), fs, "{\\an7}" .. time, fopt)
 		-- RHS: time/playback remaining
 		local rem = "-" .. mp.get_property_osd(opt.timeline_rhs, "99:99:99")
 		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}" .. rem, fopt)
