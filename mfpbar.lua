@@ -415,7 +415,7 @@ local function update_mouse_pos(kind, mouse)
 	zassert(kind == "mouse-pos")
 	state.mouse_prev = state.mouse or { hover = false }
 	state.mouse = mouse
-	msg.debug('[MOUSE] hover = ', mouse.hover, ' x = ', mouse.x, ' y = ', mouse.y)
+	-- msg.debug('[MOUSE] hover = ', mouse.hover, ' x = ', mouse.x, ' y = ', mouse.y)
 
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
