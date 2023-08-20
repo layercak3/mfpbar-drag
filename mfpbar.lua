@@ -68,7 +68,7 @@ local opt = {
 	-- TODO: add a configurable vpad as well ?
 	font_border_width = 2,
 	font_border_color = "000000",
-	proximity = 40,
+	proximity = "40",
 	preview_border_width = 2,
 	preview_border_color = "BDAE93",
 	chapter_marker_size = 3,
@@ -408,7 +408,15 @@ local function pbar_minimize_or_hide()
 end
 
 local function mouse_isactive(m)
-	return m.hover and math.abs(m.y - state.dpy_h) < opt.proximity
+	local px
+	local p = opt.proximity
+	if (string.sub(p, -1) == "%") then
+		local percent = tonumber(string.sub(p, 1, -2)) / 100.0
+		px = state.dpy_h * percent
+	else
+		px = tonumber(p)
+	end
+	return m.hover and math.abs(m.y - state.dpy_h) < px
 end
 
 local function update_mouse_pos(kind, mouse)
