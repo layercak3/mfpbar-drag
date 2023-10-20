@@ -470,15 +470,17 @@ local function set_dpy_size(kind, osd)
 	state.osd.res_y = osd.h
 	msg.debug('[DPY] w = ', osd.w, ' h = ', osd.h)
 
-	-- HACK: ensure we don't obstruct the console (excluding the preview and hovered timeline)
-	-- the shared_script_property_* functions are documented as undocumented :)
-	-- and users are discouraged to use them, but whatever...
+	-- ensure we don't obstruct the console (excluding the preview and hovered timeline)
 	local b = (opt.font_size + (opt.font_border_width * 2) + 8) / state.dpy_h -- +8 padding
 	b = b + ((opt.pbar_minimized_height + opt.cachebar_height) / 100.0)
-	utils.shared_script_property_set(
-		'osc-margins',
-		string.format('%f,%f,%f,%f', 0, 0, 0, b)
-	)
+	-- for older mpv versions
+	if (utils.shared_script_property_set ~= nil) then
+		utils.shared_script_property_set(
+			'osc-margins', string.format('%f,%f,%f,%f', 0, 0, 0, b)
+		)
+	end
+	-- newer versions which uses user-data
+	mp.set_property_native("user-data/osc/margins", { t = 0, b =  b})
 end
 
 local function set_cache_state(kind, c)
