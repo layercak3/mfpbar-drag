@@ -10,11 +10,11 @@ This is a MotherFucking Progressbar.
 ## Features
 
 The goal of this project is to be a progress-bar with minimal visual-clutter,
-features as well as code-size.
+features, as well as code-size.
 
 * Basic progress-bar functionality.
-* Show cached indicator (can be disabled).
-* Show chapter markers (can be disabled).
+* Cached indicator (can be disabled).
+* Chapter markers (can be disabled).
 * Basic hover-preview via [thumbfast][tf].
 
 ## Installation
