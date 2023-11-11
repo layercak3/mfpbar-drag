@@ -48,6 +48,7 @@ local state = {
 		disabled = true,
 		available = false
 	},
+	userdata_avail = false,
 }
 
 local opt = {
@@ -125,6 +126,15 @@ end
 
 local function clamp(n, min, max)
 	return math.min(math.max(n, min), max)
+end
+
+local function table_contains(t, value)
+	for k,v in ipairs(t) do
+		if (v == value) then
+			return true
+		end
+	end
+	return false
 end
 
 local function hover_to_sec(mx, dw, duration)
@@ -473,14 +483,13 @@ local function set_dpy_size(kind, osd)
 	-- ensure we don't obstruct the console (excluding the preview and hovered timeline)
 	local b = (opt.font_size + (opt.font_border_width * 2) + 8) / state.dpy_h -- +8 padding
 	b = b + ((opt.pbar_minimized_height + opt.cachebar_height) / 100.0)
-	-- for older mpv versions
-	if (utils.shared_script_property_set ~= nil) then
+	if (state.userdata_avail) then
+		mp.set_property_native("user-data/osc/margins", { t = 0, b =  b})
+	elseif (utils.shared_script_property_set ~= nil) then   -- for older mpv versions
 		utils.shared_script_property_set(
 			'osc-margins', string.format('%f,%f,%f,%f', 0, 0, 0, b)
 		)
 	end
-	-- newer versions which uses user-data
-	mp.set_property_native("user-data/osc/margins", { t = 0, b =  b})
 end
 
 local function set_cache_state(kind, c)
@@ -549,6 +558,11 @@ local function init()
 	else
 		zassert(false)
 	end
+
+	state.userdata_avail = table_contains(
+		mp.get_property_native("property-list"), "user-data"
+	)
+	msg.debug('[INIT] user-data: ' .. tostring(state.userdata_avail))
 
 	state.osd = mp.create_osd_overlay("ass-events")
 	mp.observe_property("osd-dimensions", "native", set_dpy_size)
