@@ -265,13 +265,14 @@ local function pbar_draw()
 		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
 
 		-- L2: timeline
+		local timeline_vpad = 2
 		-- LHS: current playback position
 		local time = mp.get_property_osd("time-pos", "00:00:00")
-		draw_text(pad, dpy_h - (ypos + fs), fs, "{\\an7}" .. time, fopt)
+		draw_text(pad, dpy_h - (ypos + fs + timeline_vpad), fs, "{\\an7}" .. time, fopt)
 		-- RHS: time/playback remaining
 		local rem = "-" .. mp.get_property_osd(opt.timeline_rhs, "99:99:99")
-		draw_text(dpy_w - pad, dpy_h - (ypos + fs), fs, "{\\an9}" .. rem, fopt)
-		ypos = ypos + fs + (fopt.bw * 2)
+		draw_text(dpy_w - pad, dpy_h - (ypos + fs + timeline_vpad), fs, "{\\an9}" .. rem, fopt)
+		ypos = ypos + fs + (fopt.bw * 2) + timeline_vpad
 
 		if (duration) then
 			zassert(state.mouse)
