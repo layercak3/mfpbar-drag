@@ -416,15 +416,16 @@ local function pbar_minimize_or_hide()
 	end
 end
 
-local function mouse_isactive(m)
-	local px
-	local p = opt.proximity
-	if (string.sub(p, -1) == "%") then
-		local percent = tonumber(string.sub(p, 1, -2)) / 100.0
-		px = state.dpy_h * percent
+local function abs_pixels(p)
+	if (p < 1) then
+		return state.dpy_h * p
 	else
-		px = tonumber(p)
+		return p
 	end
+end
+
+local function mouse_isactive(m)
+	local px = abs_pixels(opt.proximity)
 	return m.hover and math.abs(m.y - state.dpy_h) < px
 end
 
@@ -556,6 +557,15 @@ local function init()
 		zassert = assert
 	else
 		zassert(false)
+	end
+
+	if (string.sub(opt.proximity, -1) == "%") then
+		opt.proximity = tonumber(string.sub(opt.proximity, 1, -2)) / 100.0
+		if (opt.proximity >= 1.0) then
+			opt.proximity = math.huge
+		end
+	else
+		opt.proximity = math.max(tonumber(opt.proximity), 1)
 	end
 
 	state.userdata_avail = table_contains(
