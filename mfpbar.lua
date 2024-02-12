@@ -20,7 +20,6 @@ local utils = require('mp.utils')
 local mpopt = require('mp.options')
 
 -- poor man's enum
-
 local pbar_uninit      = 0
 local pbar_hidden      = 1
 local pbar_minimized   = 2
@@ -365,7 +364,6 @@ local function pbar_update(next_state)
 	}
 	msg.debug('[UPDATE]: ', statestr[state.pbar], '=> ', statestr[next_state]);
 
-	-- TODO: reduce latency when pbar is active
 	if (next_state == pbar_active) then
 		state.pbar = pbar_active
 		pbar_draw()
