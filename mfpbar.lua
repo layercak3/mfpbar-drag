@@ -75,6 +75,7 @@ local opt = {
 	chapter_marker_color = "BDAE93",
 	chapter_marker_border_width = 1,
 	chapter_marker_border_color = "161616",
+	chapter_proximity = "0.64%",
 	minimize_timeout = 3,
 
 	debug = false,
@@ -136,8 +137,38 @@ local function table_contains(t, value)
 	return false
 end
 
+local function abs_pixels(p, whole)
+	if (p < 1) then
+		return whole * p
+	else
+		return p
+	end
+end
+
+local function parse_pixel_or_percent(s)
+	local n;
+	if (string.sub(s, -1) == "%") then
+		n = tonumber(string.sub(s, 1, -2)) / 100.0
+		if (n >= 1.0) then
+			n = math.huge
+		end
+	else
+		n = math.max(tonumber(s), 1)
+	end
+	return n
+end
+
 local function hover_to_sec(mx, dw, duration)
 	zassert(duration)
+	if (opt.chapter_proximity ~= 0 and state.chapters) then
+		local prox = abs_pixels(opt.chapter_proximity, state.dpy_w)
+		for _,c in ipairs(state.chapters) do
+			local x = state.dpy_w * (c.time / duration)
+			if (math.abs(x - state.mouse.x) <= prox) then
+				return c.time;
+			end
+		end
+	end
 	local n = duration * ((mx + 0.5) / dw)
 	return clamp(n, 0, duration)
 end
@@ -245,11 +276,16 @@ local function pbar_draw()
 			local y = dpy_h - math.max(pb_h / 2, miny)
 			for _, c in ipairs(clist) do
 				local x = dpy_w * (c.time / duration)
+				local scale = tw;
+				local prox = abs_pixels(opt.chapter_proximity, state.dpy_w)
+				if (state.pbar == pbar_active and math.abs(x - state.mouse.x) <= prox) then
+					scale = round(scale * 1.5);
+				end
 				draw_rect_point(
-					x - tw,  y,
-					x,       y - tw,
-					x + tw,  y,
-					x,       y + tw,
+					x - scale,  y,
+					x,          y - scale,
+					x + scale,  y,
+					x,          y + scale,
 					opt.chapter_marker_color,
 					{ bw = bw, bcolor = opt.chapter_marker_border_color }
 				)
@@ -416,16 +452,8 @@ local function pbar_minimize_or_hide()
 	end
 end
 
-local function abs_pixels(p)
-	if (p < 1) then
-		return state.dpy_h * p
-	else
-		return p
-	end
-end
-
 local function mouse_isactive(m)
-	local px = abs_pixels(opt.proximity)
+	local px = abs_pixels(opt.proximity, state.dpy_h)
 	return m.hover and math.abs(m.y - state.dpy_h) < px
 end
 
@@ -559,14 +587,8 @@ local function init()
 		zassert(false)
 	end
 
-	if (string.sub(opt.proximity, -1) == "%") then
-		opt.proximity = tonumber(string.sub(opt.proximity, 1, -2)) / 100.0
-		if (opt.proximity >= 1.0) then
-			opt.proximity = math.huge
-		end
-	else
-		opt.proximity = math.max(tonumber(opt.proximity), 1)
-	end
+	opt.proximity         = parse_pixel_or_percent(opt.proximity);
+	opt.chapter_proximity = parse_pixel_or_percent(opt.chapter_proximity);
 
 	state.userdata_avail = table_contains(
 		mp.get_property_native("property-list"), "user-data"
