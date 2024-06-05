@@ -587,6 +587,11 @@ local function init()
 		zassert(false)
 	end
 
+	if (mp.get_property_native("osc") == true) then
+		msg.error("mfpbar will NOT function properly when default `osc` is also enabled");
+		msg.error("disable the default osc by putting `osc=no` in your `mpv.conf` file");
+	end
+
 	opt.proximity         = parse_pixel_or_percent(opt.proximity);
 	opt.chapter_proximity = parse_pixel_or_percent(opt.chapter_proximity);
 
