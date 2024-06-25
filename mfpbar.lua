@@ -20,11 +20,11 @@ local utils = require('mp.utils')
 local mpopt = require('mp.options')
 
 -- poor man's enum
-local pbar_uninit      = 0
-local pbar_hidden      = 1
-local pbar_minimized   = 2
-local pbar_maximized   = 3
-local pbar_active      = 4
+local PBAR_UNINIT      = 0
+local PBAR_HIDDEN      = 1
+local PBAR_MINIMIZED   = 2
+local PBAR_MAXIMIZED   = 3
+local PBAR_ACTIVE      = 4
 
 -- globals
 
@@ -32,13 +32,13 @@ local state = {
 	osd = nil,
 	dpy_w = 0,
 	dpy_h = 0,
-	pbar = pbar_uninit,
+	pbar = PBAR_UNINIT,
 	mouse = nil,
 	mouse_prev = nil,
 	cached_ranges = nil,
 	duration = nil,
 	chapters = nil,
-	minimize_timeout = nil,
+	minimize_timeout = { kill = function() end, resume = function() end },
 	maximize_timeout = { kill = function() end, resume = function() end },
 	time_observed = false,
 	press_bounded = false,
@@ -231,14 +231,14 @@ local function pbar_draw()
 	local duration = state.duration
 	local clist = state.chapters
 
-	zassert(state.pbar == pbar_minimized or state.pbar == pbar_maximized or state.pbar == pbar_active)
+	zassert(state.pbar >= PBAR_MINIMIZED and state.pbar <= PBAR_ACTIVE)
 
 	if (play_pos == nil or dpy_w == 0 or dpy_h == 0) then
 		return
 	end
 
 	-- L0: playback cursor
-	local pb_h = state.pbar == pbar_minimized and opt.pbar_minimized_height or opt.pbar_height
+	local pb_h = state.pbar == PBAR_MINIMIZED and opt.pbar_minimized_height or opt.pbar_height
 	zassert(pb_h > 0)
 	pb_h = dpy_h * (pb_h / 100)
 	pb_h = math.max(round(pb_h), 4)
@@ -281,7 +281,7 @@ local function pbar_draw()
 				local x = dpy_w * (c.time / duration)
 				local scale = tw;
 				local prox = abs_pixels(opt.chapter_proximity, state.dpy_w)
-				if (state.pbar == pbar_active and math.abs(x - state.mouse.x) <= prox) then
+				if (state.pbar == PBAR_ACTIVE and math.abs(x - state.mouse.x) <= prox) then
 					scale = round(scale * 1.5);
 				end
 				draw_rect_point(
@@ -300,7 +300,7 @@ local function pbar_draw()
 	local fs = opt.font_size
 	local pad = opt.font_pad
 	local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
-	if (state.pbar == pbar_maximized or state.pbar == pbar_active) then
+	if (state.pbar == PBAR_MAXIMIZED or state.pbar == PBAR_ACTIVE) then
 		-- L2: timeline
 		local timeline_vpad = 2
 		-- LHS: current playback position
@@ -312,62 +312,59 @@ local function pbar_draw()
 		ypos = ypos + fs + (fopt.bw * 2) + timeline_vpad
 	end
 
-	if (state.pbar == pbar_active) then
-		if (duration) then
-			zassert(state.mouse)
+	if (state.pbar == PBAR_ACTIVE and duration) then
+		zassert(state.mouse)
+		-- L0-2: hovered timeline
+		local hover_sec = hover_to_sec(state.mouse.x, dpy_w, duration)
+		local hover_text = format_time(hover_sec)
+		draw_rect(
+			math.max(state.mouse.x - 1, 0), dpy_h - ypos,
+			2, ypos, opt.hover_bar_color
+		)
+		local fw = fs * 2 -- guesstimate ¯\_(ツ)_/¯
+		local x = clamp(state.mouse.x, pad + fw, dpy_w - (pad + fw))
+		draw_text(
+			x, dpy_h - (ypos + fs), fs,
+			"{\\an8}" .. hover_text, fopt
+		)
+		ypos = ypos + fs + (fopt.bw * 2)
 
-			-- L0-2: hovered timeline
-			local hover_sec = hover_to_sec(state.mouse.x, dpy_w, duration)
-			local hover_text = format_time(hover_sec)
-			draw_rect(
-				math.max(state.mouse.x - 1, 0), dpy_h - ypos,
-				2, ypos, opt.hover_bar_color
-			)
-			local fw = fs * 2 -- guesstimate ¯\_(ツ)_/¯
+		-- L3: chapter name
+		local cname = clist and grab_chapter_name_at(hover_sec) or nil
+		if cname then
+			zassert(cname)
+			local fw = string.len(cname) * fs * 0.28 -- guesstimate again
 			local x = clamp(state.mouse.x, pad + fw, dpy_w - (pad + fw))
 			draw_text(
-				x, dpy_h - (ypos + fs), fs,
-				"{\\an8}" .. hover_text, fopt
+				x, dpy_h - (ypos + fs),
+				fs, "{\\an8}" .. cname, fopt
 			)
 			ypos = ypos + fs + (fopt.bw * 2)
+		end
 
-			-- L3: chapter name
-			local cname = clist and grab_chapter_name_at(hover_sec) or nil
-			if cname then
-				zassert(cname)
-				local fw = string.len(cname) * fs * 0.28 -- guesstimate again
-				local x = clamp(state.mouse.x, pad + fw, dpy_w - (pad + fw))
-				draw_text(
-					x, dpy_h - (ypos + fs),
-					fs, "{\\an8}" .. cname, fopt
+		-- L4: preview thumbnail
+		if not state.thumbfast.disabled then
+			local pw = opt.preview_border_width
+			local hpad = 4 + pw
+			local tw = state.thumbfast.width
+			local th = state.thumbfast.height
+			local y = dpy_h - (ypos + th + pw)
+			local x = state.mouse.x - (tw / 2)
+			x = clamp(x, hpad, dpy_w - (hpad + tw))
+			mp.commandv(
+				"script-message-to", "thumbfast", "thumb",
+				hover_sec, x, y
+			)
+			ypos = ypos + th + pw
+
+			-- L4: preview border
+			if pw > 0 then
+				local c = opt.preview_border_color
+				draw_rect(
+					x, y, tw, th, "161616",
+					{ alpha = "7F", bw = pw, bcolor = c }
 				)
-				ypos = ypos + fs + (fopt.bw * 2)
-			end
-
-			-- L4: preview thumbnail
-			if not state.thumbfast.disabled then
-				local pw = opt.preview_border_width
-				local hpad = 4 + pw
-				local tw = state.thumbfast.width
-				local th = state.thumbfast.height
-				local y = dpy_h - (ypos + th + pw)
-				local x = state.mouse.x - (tw / 2)
-				x = clamp(x, hpad, dpy_w - (hpad + tw))
-				mp.commandv(
-					"script-message-to", "thumbfast", "thumb",
-					hover_sec, x, y
-				)
-				ypos = ypos + th + pw
-
-				-- L4: preview border
-				if pw > 0 then
-					local c = opt.preview_border_color
-					draw_rect(
-						x, y, tw, th, "161616",
-						{ alpha = "7F", bw = pw, bcolor = c }
-					)
-					ypos = ypos + pw
-				end
+				ypos = ypos + pw
 			end
 		end
 	end
@@ -377,7 +374,7 @@ end
 
 local function pbar_pressed()
 	zassert(state.mouse.hover)
-	zassert(state.pbar == pbar_active)
+	zassert(state.pbar == PBAR_ACTIVE)
 	if (state.duration) then
 		mp.set_property("time-pos",  hover_to_sec(
 			state.mouse.x, state.dpy_w, state.duration
@@ -390,7 +387,7 @@ local function pbar_update(next_state)
 	local dpy_h = state.dpy_h
 
 	if (dpy_w == 0 or dpy_h == 0 or
-	    state.pbar == next_state or state.pbar == pbar_uninit)
+	    state.pbar == next_state or state.pbar == PBAR_UNINIT)
 	then
 		return
 	end
@@ -399,14 +396,14 @@ local function pbar_update(next_state)
 	zassert(dpy_h > 0)
 
 	local statestr = {
-		[pbar_uninit] = "uninit", [pbar_active] = "active",
-		[pbar_minimized] = "minimized", [pbar_hidden] = "hidden",
-		[pbar_maximized] = "maximized"
+		[PBAR_UNINIT] = "uninit", [PBAR_HIDDEN] = "hidden",
+		[PBAR_MINIMIZED] = "minimized", [PBAR_MAXIMIZED] = "maximized",
+		[PBAR_ACTIVE] = "active",
 	}
 	msg.debug('[UPDATE]: ', statestr[state.pbar], '=> ', statestr[next_state]);
 
-	if (next_state == pbar_active) then
-		state.pbar = pbar_active
+	if (next_state == PBAR_ACTIVE) then
+		state.pbar = PBAR_ACTIVE
 		pbar_draw()
 		if (not state.press_bounded) then
 			mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
@@ -417,24 +414,24 @@ local function pbar_update(next_state)
 			state.time_observed = true
 		end
 	else
-		if (next_state == pbar_maximized) then
-			state.pbar = pbar_maximized
+		if (next_state == PBAR_MAXIMIZED) then
+			state.pbar = PBAR_MAXIMIZED
 			pbar_draw()
 			if (not state.time_observed) then
 				mp.observe_property("time-pos", nil, pbar_draw)
 				state.time_observed = true
 			end
-		elseif (next_state == pbar_minimized) then
+		elseif (next_state == PBAR_MINIMIZED) then
 			zassert(opt.pbar_minimized_height > 0)
-			state.pbar = pbar_minimized
+			state.pbar = PBAR_MINIMIZED
 			pbar_draw()
 			if (not state.time_observed) then
 				mp.observe_property("time-pos", nil, pbar_draw)
 				state.time_observed = true
 			end
-		elseif (next_state == pbar_hidden) then
-			zassert(state.pbar ~= pbar_hidden)
-			state.pbar = pbar_hidden
+		elseif (next_state == PBAR_HIDDEN) then
+			zassert(state.pbar ~= PBAR_HIDDEN)
+			state.pbar = PBAR_HIDDEN
 			state.osd.data = '' -- clear everything
 			render()
 			zassert(state.time_observed)
@@ -458,9 +455,9 @@ end
 local function pbar_minimize_or_hide()
 	msg.debug("[MIN-HIDE]")
 	if (opt.pbar_minimized_height > 0 and not (opt.pbar_fullscreen_hide and state.fullscreen)) then
-		pbar_update(pbar_minimized)
+		pbar_update(PBAR_MINIMIZED)
 	else
-		pbar_update(pbar_hidden)
+		pbar_update(PBAR_HIDDEN)
 	end
 end
 
@@ -470,10 +467,10 @@ local function pbar_maximize(time)
 	end
 	time = time or opt.maximize_timeout
 	msg.debug('[MAXIMIZE] recieved maximize request')
-	if (state.pbar == pbar_active or time <= 0) then return end
+	if (state.pbar == PBAR_ACTIVE or time <= 0) then return end
 	state.maximize_timeout:kill()
 	state.maximize_timeout = mp.add_timeout(time, pbar_minimize_or_hide)
-	pbar_update(pbar_maximized)
+	pbar_update(PBAR_MAXIMIZED)
 end
 
 local function mouse_isactive(m)
@@ -505,8 +502,8 @@ local function update_mouse_pos(kind, mouse)
 		state.minimize_timeout:kill()
 		state.minimize_timeout:resume()
 		state.maximize_timeout:kill()
-		pbar_update(pbar_active)
-	elseif (state.pbar ~= pbar_maximized) then
+		pbar_update(PBAR_ACTIVE)
+	elseif (state.pbar ~= PBAR_MAXIMIZED) then
 		state.minimize_timeout:kill()
 		pbar_minimize_or_hide()
 	end
@@ -588,10 +585,10 @@ local function pbar_init(kind, thing)
 	msg.debug("[VO-CONFIGURED]", thing, state.pbar)
 
 	if thing then
-		zassert(state.pbar == pbar_uninit)
-		state.pbar = pbar_hidden
+		zassert(state.pbar == PBAR_UNINIT)
+		state.pbar = PBAR_HIDDEN
 		if (opt.pbar_minimized_height > 0) then
-			pbar_update(pbar_minimized)
+			pbar_update(PBAR_MINIMIZED)
 		end
 		mp.unobserve_property(pbar_init)
 	end
@@ -642,8 +639,6 @@ local function init()
 	if (opt.minimize_timeout > 0) then
 		state.minimize_timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
 		state.minimize_timeout:kill() -- update_mouse_pos() will kill/resume this as needed
-	else
-		state.minimize_timeout = { kill = function() end, resume = function() end }
 	end
 
 	-- HACK: mpv doesn't open the window instantly by default.
