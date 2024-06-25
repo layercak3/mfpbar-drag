@@ -24,14 +24,30 @@ features, as well as code-size.
 * Put `osc=no` in your `mpv.conf`.
 
 * Optionally install [thumbfast][tf] for preview support.
-* Optionally put [mfpbar.conf](mfpbar.conf) inside `~~/script-opts` to customize
-  certain options.
 * It is also recommended (but not required) to set `osd-bar=no` in your
   `mpv.conf`.
 
 NOTE that `mfpbar` requires mpv version `0.33.0` or above.
 
 [tf]: https://github.com/po5/thumbfast
+
+## Configuration
+
+`mfpbar` can be configured by creating a `mfpbar.conf` file inside
+`~~/script-opts` directory. All the available options and their defaults are
+documented in the example [mfpbar.conf](./mfpbar.conf) file.
+
+Additionally, `mfpbar` registers a `maximize` key binding which you can bind in
+your `input.conf`. For example, the following binds <kbd>RIGHT</kbd> to seek and
+simultaneously maximize the bar:
+
+    RIGHT seek 5; script-binding mfpbar/maximize
+
+You can also specify a non-default timeout (in seconds) via using script
+message. The following will maximize the bar for 3 seconds when pressing
+<kbd>TAB</kbd>.
+
+    TAB  script-message-to  mfpbar maximize 1.5
 
 ## Motivation
 
