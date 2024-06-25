@@ -23,7 +23,8 @@ local mpopt = require('mp.options')
 local pbar_uninit      = 0
 local pbar_hidden      = 1
 local pbar_minimized   = 2
-local pbar_active      = 3
+local pbar_maximized   = 3
+local pbar_active      = 4
 
 -- globals
 
@@ -37,7 +38,8 @@ local state = {
 	cached_ranges = nil,
 	duration = nil,
 	chapters = nil,
-	timeout = nil,
+	minimize_timeout = nil,
+	maximize_timeout = { kill = function() end, resume = function() end },
 	time_observed = false,
 	press_bounded = false,
 	fullscreen = false,
@@ -77,6 +79,7 @@ local opt = {
 	chapter_marker_border_color = "161616",
 	chapter_proximity = "0.64%",
 	minimize_timeout = 3,
+	maximize_timeout = 1.5,
 
 	debug = false,
 }
@@ -228,7 +231,7 @@ local function pbar_draw()
 	local duration = state.duration
 	local clist = state.chapters
 
-	zassert(state.pbar == pbar_minimized or state.pbar == pbar_active)
+	zassert(state.pbar == pbar_minimized or state.pbar == pbar_maximized or state.pbar == pbar_active)
 
 	if (play_pos == nil or dpy_w == 0 or dpy_h == 0) then
 		return
@@ -294,11 +297,10 @@ local function pbar_draw()
 		end
 	end
 
-	if (state.pbar == pbar_active) then
-		local fs = opt.font_size
-		local pad = opt.font_pad
-		local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
-
+	local fs = opt.font_size
+	local pad = opt.font_pad
+	local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
+	if (state.pbar == pbar_maximized or state.pbar == pbar_active) then
 		-- L2: timeline
 		local timeline_vpad = 2
 		-- LHS: current playback position
@@ -308,7 +310,9 @@ local function pbar_draw()
 		local rem = "-" .. mp.get_property_osd(opt.timeline_rhs, "99:99:99")
 		draw_text(dpy_w - pad, dpy_h - (ypos + fs + timeline_vpad), fs, "{\\an9}" .. rem, fopt)
 		ypos = ypos + fs + (fopt.bw * 2) + timeline_vpad
+	end
 
+	if (state.pbar == pbar_active) then
 		if (duration) then
 			zassert(state.mouse)
 
@@ -396,7 +400,8 @@ local function pbar_update(next_state)
 
 	local statestr = {
 		[pbar_uninit] = "uninit", [pbar_active] = "active",
-		[pbar_minimized] = "minimized", [pbar_hidden] = "hidden"
+		[pbar_minimized] = "minimized", [pbar_hidden] = "hidden",
+		[pbar_maximized] = "maximized"
 	}
 	msg.debug('[UPDATE]: ', statestr[state.pbar], '=> ', statestr[next_state]);
 
@@ -412,7 +417,14 @@ local function pbar_update(next_state)
 			state.time_observed = true
 		end
 	else
-		if (next_state == pbar_minimized) then
+		if (next_state == pbar_maximized) then
+			state.pbar = pbar_maximized
+			pbar_draw()
+			if (not state.time_observed) then
+				mp.observe_property("time-pos", nil, pbar_draw)
+				state.time_observed = true
+			end
+		elseif (next_state == pbar_minimized) then
 			zassert(opt.pbar_minimized_height > 0)
 			state.pbar = pbar_minimized
 			pbar_draw()
@@ -452,6 +464,18 @@ local function pbar_minimize_or_hide()
 	end
 end
 
+local function pbar_maximize(time)
+	if (time) then
+		time = tonumber(time)
+	end
+	time = time or opt.maximize_timeout
+	msg.debug('[MAXIMIZE] recieved maximize request')
+	if (state.pbar == pbar_active or time <= 0) then return end
+	state.maximize_timeout:kill()
+	state.maximize_timeout = mp.add_timeout(time, pbar_minimize_or_hide)
+	pbar_update(pbar_maximized)
+end
+
 local function mouse_isactive(m)
 	local px = abs_pixels(opt.proximity, state.dpy_h)
 	return m.hover and math.abs(m.y - state.dpy_h) < px
@@ -478,11 +502,12 @@ local function update_mouse_pos(kind, mouse)
 	if (mouse_isactive(state.mouse_prev) and mouse_isactive(mouse)) then
 		-- TODO: a better way to do this without killing/resuming a
 		-- timer on each mouse update?
-		state.timeout:kill()
-		state.timeout:resume()
+		state.minimize_timeout:kill()
+		state.minimize_timeout:resume()
+		state.maximize_timeout:kill()
 		pbar_update(pbar_active)
-	else
-		state.timeout:kill()
+	elseif (state.pbar ~= pbar_maximized) then
+		state.minimize_timeout:kill()
 		pbar_minimize_or_hide()
 	end
 end
@@ -612,11 +637,13 @@ local function init()
 	-- NOTE: mouse-pos doesn't work mpv versions older than v33
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
 
+	mp.add_key_binding(nil, "maximize", pbar_maximize, { repeatable = true })
+
 	if (opt.minimize_timeout > 0) then
-		state.timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
-		state.timeout:kill() -- update_mouse_pos() will kill/resume this as needed
+		state.minimize_timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
+		state.minimize_timeout:kill() -- update_mouse_pos() will kill/resume this as needed
 	else
-		state.timeout = { kill = function() end, resume = function() end }
+		state.minimize_timeout = { kill = function() end, resume = function() end }
 	end
 
 	-- HACK: mpv doesn't open the window instantly by default.
