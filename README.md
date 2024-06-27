@@ -44,10 +44,10 @@ simultaneously maximize the bar:
     RIGHT seek 5; script-binding mfpbar/maximize
 
 You can also specify a non-default timeout (in seconds) via using script
-message. The following will maximize the bar for 3 seconds when pressing
+message. The following will maximize the bar for 2.4 seconds when pressing
 <kbd>TAB</kbd>.
 
-    TAB  script-message-to  mfpbar maximize 1.5
+    TAB  script-message-to  mfpbar maximize 2.4
 
 ## Motivation
 
