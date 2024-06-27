@@ -80,7 +80,7 @@ local opt = {
 	chapter_proximity = "0.64%",
 	minimize_timeout = 3,
 	maximize_timeout = 1.5,
-	maximize_on_seek = false,
+	maximize_on_seek = true,
 
 	debug = false,
 }

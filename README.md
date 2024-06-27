@@ -38,10 +38,10 @@ NOTE that `mfpbar` requires mpv version `0.33.0` or above.
 documented in the example [mfpbar.conf](./mfpbar.conf) file.
 
 Additionally, `mfpbar` registers a `maximize` key binding which you can bind in
-your `input.conf`. For example, the following binds <kbd>RIGHT</kbd> to seek and
-simultaneously maximize the bar:
+your `input.conf`. For example, the following binds <kbd>Space</kbd> to pause
+and simultaneously maximize the bar:
 
-    RIGHT seek 5; script-binding mfpbar/maximize
+    Space cycle pause; script-binding mfpbar/maximize
 
 You can also specify a non-default timeout (in seconds) via using script
 message. The following will maximize the bar for 2.4 seconds when pressing
