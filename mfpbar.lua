@@ -80,6 +80,7 @@ local opt = {
 	chapter_proximity = "0.64%",
 	minimize_timeout = 3,
 	maximize_timeout = 1.5,
+	maximize_on_seek = false,
 
 	debug = false,
 }
@@ -635,6 +636,9 @@ local function init()
 	mp.observe_property("mouse-pos", "native", update_mouse_pos)
 
 	mp.add_key_binding(nil, "maximize", pbar_maximize, { repeatable = true })
+	if (opt.maximize_on_seek) then
+		mp.register_event("seek", pbar_maximize)
+	end
 
 	if (opt.minimize_timeout > 0) then
 		state.minimize_timeout = mp.add_timeout(opt.minimize_timeout, pbar_minimize_or_hide)
