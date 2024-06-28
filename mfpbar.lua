@@ -90,14 +90,20 @@ local zassert = function() end
 -- function implementation
 
 -- ASS uses BBGGRR format, which fucking sucks
-local function rgb_to_ass(color)
-	if (not string.len(color) == 6) then
+local function hex_to_ass(color)
+	local r, g, b
+	if (string.len(color) == 3) then
+		r = string.rep(string.sub(color, 1, 1), 2)
+		g = string.rep(string.sub(color, 2, 2), 2)
+		b = string.rep(string.sub(color, 3, 3), 2)
+	elseif (string.len(color) == 6) then
+		r = string.sub(color, 1, 2)
+		g = string.sub(color, 3, 4)
+		b = string.sub(color, 5, 6)
+	else
 		msg.error("Invalid color: " .. color)
 		return "FFFFFF"
 	end
-	local r = string.sub(color, 1, 2)
-	local g = string.sub(color, 3, 4)
-	local b = string.sub(color, 5, 6)
 	return string.upper(b .. g .. r)
 end
 
@@ -599,7 +605,8 @@ local function init()
 	mpopt.read_options(opt, "mfpbar")
 	for k,v in pairs(opt) do
 		if string.find(k, "_color$") then
-			opt[k] = rgb_to_ass(v)
+			opt[k] = hex_to_ass(v)
+			msg.debug(k .. "(" .. v .. ") => ", opt[k])
 		end
 	end
 
