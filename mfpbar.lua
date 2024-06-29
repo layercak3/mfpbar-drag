@@ -56,6 +56,7 @@ local opt = {
 	pbar_height = 2,
 	pbar_minimized_height = 0.5,
 	pbar_color = "CCCCCC",
+	pbar_bg_color = "000000",
 	pbar_bg_alpha = "3F",
 	pbar_fullscreen_hide = true,
 	cachebar_height = 0.24,
@@ -254,7 +255,7 @@ local function pbar_draw()
 	local pb_w = dpy_w * (play_pos/100.0)
 	local pb_y = dpy_h - (pb_h + ypos)
 	draw_rect(0,    pb_y, pb_w, pb_h, opt.pbar_color)
-	draw_rect(pb_w, pb_y, dpy_w - pb_w, pb_h, "000000", { alpha = opt.pbar_bg_alpha })
+	draw_rect(pb_w, pb_y, dpy_w - pb_w, pb_h, opt.pbar_bg_color, { alpha = opt.pbar_bg_alpha })
 	ypos = ypos + pb_h
 
 	if (duration) then
