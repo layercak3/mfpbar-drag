@@ -65,6 +65,7 @@ local opt = {
 	-- TODO: allow selecting "duration" as well ?
 	timeline_rhs = "time-remaining",
 	hover_bar_color = "BDAE93",
+	font_color = "EBEBEB",
 	font_size = 16,
 	font_pad = 4, -- TODO: rename this to hpad ?
 	-- TODO: add a configurable vpad as well ?
@@ -223,6 +224,7 @@ end
 local function draw_text(x, y, size, text, opt)
 	local s = string.format('{\\pos(%d, %d)}{\\fs%d}', x, y, size)
 	opt = opt or {}
+	s = s .. '{\\1c&' .. (opt.color or "EBEBEB") .. '&}'
 	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
 	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
 	s = s .. text
@@ -306,7 +308,7 @@ local function pbar_draw()
 
 	local fs = opt.font_size
 	local pad = opt.font_pad
-	local fopt = { bw = opt.font_border_width, bcolor = opt.font_border_color }
+	local fopt = { color = opt.font_color, bw = opt.font_border_width, bcolor = opt.font_border_color }
 	if (state.pbar == PBAR_MAXIMIZED or state.pbar == PBAR_ACTIVE) then
 		-- L2: timeline
 		local timeline_vpad = 2
