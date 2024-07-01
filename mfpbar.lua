@@ -56,13 +56,11 @@ local opt = {
 	pbar_height = 2,
 	pbar_minimized_height = 0.5,
 	pbar_color = "CCCCCC",
-	pbar_bg_color = "000000",
-	pbar_bg_alpha = "3F",
+	pbar_bg_color = "000000C0",
 	pbar_fullscreen_hide = true,
 	cachebar_height = 0.24,
 	cachebar_color = "1C6C89",
-	cachebar_uncached_color = "CC3A2A",
-	cachebar_uncached_alpha = "70",
+	cachebar_uncached_color = "CC3A2A8F",
 	-- TODO: allow selecting "duration" as well ?
 	timeline_rhs = "time-remaining",
 	hover_bar_color = "BDAE93",
@@ -85,28 +83,46 @@ local opt = {
 	maximize_on_seek = true,
 
 	debug = false,
+
+	-- backwards compat
+	pbar_bg_alpha = "",
+	cachebar_uncached_alpha = "",
 }
 
 local zassert = function() end
 
 -- function implementation
 
--- ASS uses BBGGRR format, which fucking sucks
+-- ASS uses BBGGRR format, which fucking sucks.
+-- so we accept css style hex colors in config and convert it into BBGGRROO,
+-- where 'O' stands for opacity.
 local function hex_to_ass(color)
-	local r, g, b
+	local og_color = color
+	local r, g, b, a
+
 	if (string.len(color) == 3) then
+		color = color .. 'F'
+	elseif (string.len(color) == 6) then
+		color = color .. 'FF'
+	end
+
+	if (string.len(color) == 4) then
 		r = string.rep(string.sub(color, 1, 1), 2)
 		g = string.rep(string.sub(color, 2, 2), 2)
 		b = string.rep(string.sub(color, 3, 3), 2)
-	elseif (string.len(color) == 6) then
+		a = string.rep(string.sub(color, 4, 4), 2)
+	elseif (string.len(color) == 8) then
 		r = string.sub(color, 1, 2)
 		g = string.sub(color, 3, 4)
 		b = string.sub(color, 5, 6)
+		a = string.sub(color, 7, 8)
 	else
-		msg.error("Invalid color: " .. color)
-		return "FFFFFF"
+		msg.error("Invalid color: " .. og_color)
+		return "FFFFFF00"
 	end
-	return string.upper(b .. g .. r)
+
+	local o = string.format("%02X", 0xFF - tonumber("0x" .. a))
+	return string.upper(b .. g .. r .. o)
 end
 
 local function grab_chapter_name_at(sec)
@@ -198,13 +214,21 @@ local function draw_append(text)
 	end
 end
 
+local function draw_color(color, section)
+	zassert(color:len() == 8)
+	local bgr = string.sub(color, 1, 6)
+	local opacity = string.sub(color, 7, 8)
+	local ret  = '{\\' .. section .. 'c&' .. bgr     .. '&}'
+	ret = ret .. '{\\' .. section .. 'a&' .. opacity .. '&}'
+	return ret
+end
+
 local function draw_rect_point(x0, y0, x1, y1, x2, y2, x3, y3, color, opt)
 	local s = '{\\pos(0, 0)\\an7}'
 	opt = opt or {}
-	s = s .. '{\\1c&' .. color .. '&}'
-	s = s .. '{\\1a&' .. (opt.alpha or "00") .. '&}'
+	s = s .. draw_color(color, "1");
+	s = s .. draw_color(opt.bcolor or "00000000", "3");
 	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
-	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
 	s = s .. string.format(
 		'{\\p1}m %d %d l %d %d %d %d %d %d{\\p0}',
 		x0, y0, x1, y1, x2, y2, x3, y3
@@ -225,9 +249,9 @@ end
 local function draw_text(x, y, size, text, opt)
 	local s = string.format('{\\pos(%d, %d)}{\\fs%d}', x, y, size)
 	opt = opt or {}
-	s = s .. '{\\1c&' .. (opt.color or "EBEBEB") .. '&}'
+	s = s .. draw_color(opt.color  or "EBEBEB00", "1");
+	s = s .. draw_color(opt.bcolor or "00000000", "3");
 	s = s .. '{\\bord' .. (opt.bw or '0') .. '}'
-	s = s .. '{\\3c&' .. (opt.bcolor or "000000") .. '&}'
 	s = s .. text
 	draw_append(s)
 end
@@ -255,7 +279,7 @@ local function pbar_draw()
 	local pb_w = dpy_w * (play_pos/100.0)
 	local pb_y = dpy_h - (pb_h + ypos)
 	draw_rect(0,    pb_y, pb_w, pb_h, opt.pbar_color)
-	draw_rect(pb_w, pb_y, dpy_w - pb_w, pb_h, opt.pbar_bg_color, { alpha = opt.pbar_bg_alpha })
+	draw_rect(pb_w, pb_y, dpy_w - pb_w, pb_h, opt.pbar_bg_color)
 	ypos = ypos + pb_h
 
 	if (duration) then
@@ -266,8 +290,7 @@ local function pbar_draw()
 			ch = math.max(round(ch), 2)
 			draw_rect(
 				0, dpy_h - (ch + ypos), dpy_w, ch,
-				opt.cachebar_uncached_color,
-				{ alpha = opt.cachebar_uncached_alpha }
+				opt.cachebar_uncached_color
 			)
 			for _, range in ipairs(state.cached_ranges) do
 				local s = range['start']
@@ -371,8 +394,8 @@ local function pbar_draw()
 			if pw > 0 then
 				local c = opt.preview_border_color
 				draw_rect(
-					x, y, tw, th, "161616",
-					{ alpha = "7F", bw = pw, bcolor = c }
+					x, y, tw, th, "1616167F",
+					{ bw = pw, bcolor = c }
 				)
 				ypos = ypos + pw
 			end
@@ -606,6 +629,14 @@ end
 
 local function init()
 	mpopt.read_options(opt, "mfpbar")
+
+	if opt.debug then
+		msg.debug("[ASSERTIONS] enabled")
+		zassert = assert
+	else
+		zassert(false)
+	end
+
 	for k,v in pairs(opt) do
 		if string.find(k, "_color$") then
 			opt[k] = hex_to_ass(v)
@@ -613,11 +644,14 @@ local function init()
 		end
 	end
 
-	if opt.debug then
-		msg.debug("[ASSERTIONS] enabled")
-		zassert = assert
-	else
-		zassert(false)
+	-- backwards compat
+	for _,a in ipairs({ "pbar_bg_alpha", "cachebar_uncached_alpha" }) do
+		if (opt[a]:len() == 2) then
+			local c = a:gsub("_alpha$", "_color")
+			msg.warn(a, "is deprecated, use", c, "instead")
+			opt[c] = string.sub(opt[c], 1, 6) .. opt[a]
+			opt[a] = nil
+		end
 	end
 
 	if (mp.get_property_native("osc") == true) then
