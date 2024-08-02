@@ -567,7 +567,7 @@ local function set_dpy_size(kind, osd)
 	local b = (opt.font_size + (opt.font_border_width * 2) + 8) / state.dpy_h -- +8 padding
 	b = b + ((opt.pbar_minimized_height + opt.cachebar_height) / 100.0)
 	if (state.userdata_avail) then
-		mp.set_property_native("user-data/osc/margins", { t = 0, b =  b})
+		mp.set_property_native("user-data/osc/margins", { l = 0, r = 0, t = 0, b = b })
 	elseif (utils.shared_script_property_set ~= nil) then   -- for older mpv versions
 		utils.shared_script_property_set(
 			'osc-margins', string.format('%f,%f,%f,%f', 0, 0, 0, b)
