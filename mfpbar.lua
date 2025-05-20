@@ -51,6 +51,9 @@ local state = {
 	},
 	userdata_avail = false,
 	used_vo_dragging = false,
+	mouse_btn_held = false,
+	exact_drag_seek = false,
+	seek_prev = nil,
 }
 
 local opt = {
@@ -406,13 +409,50 @@ local function pbar_draw()
 	render()
 end
 
-local function pbar_pressed()
+local function seek_player(exact)
+	-- absolute or absolute-percent, either works.
+	--local seek_time = hover_to_sec(state.mouse.x, state.dpy_w, state.duration)
+	local seek_time = (state.mouse.x / state.dpy_w) * 100
+
+	local seek_flags = "absolute-percent"
+	if (exact) then
+		seek_flags = seek_flags .. "+exact"
+	else
+		seek_flags = seek_flags .. "+keyframes"
+	end
+
+	if (state.seek_prev ~= seek_time) then
+		mp.commandv("seek", seek_time, seek_flags)
+		state.seek_prev = seek_time
+	end
+end
+
+local function mouse_isactive(m)
+	local px = abs_pixels(opt.proximity, state.dpy_h)
+	return m.hover and math.abs(m.y - state.dpy_h) < px
+end
+
+local function pbar_button_event(complex)
 	zassert(state.mouse.hover)
 	zassert(state.pbar == PBAR_ACTIVE)
+
+	if (complex.event ~= "down") then
+		if (complex.event == "up") then
+			state.mouse_btn_held = false
+			if mouse_isactive(state.mouse) then
+				state.minimize_timeout:resume()
+			else
+				mp.commandv("script-message-to", mp.get_script_name(), "minimize-or-hide")
+			end
+		end
+		return
+	end
+
+	state.mouse_btn_held = true
+	state.minimize_timeout:kill()
+
 	if (state.duration) then
-		mp.set_property("time-pos",  hover_to_sec(
-			state.mouse.x, state.dpy_w, state.duration
-		));
+		seek_player(true)
 	end
 end
 
@@ -442,7 +482,7 @@ local function pbar_update(next_state)
 		mp.set_property_bool("input-builtin-dragging", false)
 		pbar_draw()
 		if (not state.press_bounded) then
-			mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
+			mp.add_forced_key_binding('mbtn_left', 'pbar_button_event', pbar_button_event, { complex = true })
 			mp.add_forced_key_binding('mbtn_left_dbl', 'pbar_ignore_dbl')
 			state.press_bounded = true
 		end
@@ -480,7 +520,7 @@ local function pbar_update(next_state)
 		end
 
 		if (state.press_bounded) then
-			mp.remove_key_binding('pbar_pressed')
+			mp.remove_key_binding('pbar_button_event')
 			mp.remove_key_binding('pbar_ignore_dbl')
 			state.press_bounded = false
 		end
@@ -512,11 +552,6 @@ local function pbar_maximize(time)
 	pbar_update(PBAR_MAXIMIZED)
 end
 
-local function mouse_isactive(m)
-	local px = abs_pixels(opt.proximity, state.dpy_h)
-	return m.hover and math.abs(m.y - state.dpy_h) < px
-end
-
 local function update_mouse_pos(kind, mouse)
 	zassert(kind == "mouse-pos")
 	state.mouse_prev = state.mouse or { hover = false }
@@ -538,13 +573,19 @@ local function update_mouse_pos(kind, mouse)
 	if (mouse_isactive(state.mouse_prev) and mouse_isactive(mouse)) then
 		-- TODO: a better way to do this without killing/resuming a
 		-- timer on each mouse update?
-		state.minimize_timeout:kill()
-		state.minimize_timeout:resume()
+		if not state.mouse_btn_held then
+			state.minimize_timeout:kill()
+			state.minimize_timeout:resume()
+		end
 		state.maximize_timeout:kill()
 		pbar_update(PBAR_ACTIVE)
-	elseif (state.pbar ~= PBAR_MAXIMIZED) then
+	elseif (state.pbar ~= PBAR_MAXIMIZED and not state.mouse_btn_held) then
 		state.minimize_timeout:kill()
 		pbar_minimize_or_hide()
+	end
+
+	if (state.pbar == PBAR_ACTIVE and state.mouse_btn_held) then
+		seek_player(state.exact_drag_seek)
 	end
 end
 
@@ -633,6 +674,14 @@ local function pbar_init(kind, thing)
 	end
 end
 
+local function set_exact_drag_seek(value)
+	if (value == "yes") then
+		state.exact_drag_seek = true
+	else
+		state.exact_drag_seek = false
+	end
+end
+
 local function init()
 	mpopt.read_options(opt, "mfpbar")
 
@@ -698,6 +747,9 @@ local function init()
 	-- HACK: mpv doesn't open the window instantly by default.
 	-- so wait for 'vo-configured' as a hook for when the window opens.
 	mp.observe_property('vo-configured', 'native', pbar_init)
+
+	mp.add_key_binding(nil, "minimize-or-hide", pbar_minimize_or_hide)
+	mp.register_script_message("exact-drag-seek", set_exact_drag_seek)
 end
 
 init()
