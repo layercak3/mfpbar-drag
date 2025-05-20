@@ -1,3 +1,28 @@
+# mfpbar-drag
+
+This is a motherfucking progress bar with support for dragging.
+
+Differences:
+* The seek now occurs when the left mouse button is pressed, not when it's
+  released.
+* When the left mouse button is pressed, an exact seek is used. Then, any seeks
+  triggered by dragging are keyframe seeks by default. No seek is performed when
+  releasing the button.
+* The script message 'exact-drag-seek yes' can be used to enable exact seeks
+  when dragging, and 'exact-drag-seek no' to use keyframes again. You could
+  for example observe the hr-seek property for changes in another script and
+  change drag seeking behaviour according to the value of hr-seek.
+* `--input-builtin-dragging` is disabled while the progress bar is active (i.e.
+  when the mouse is in the proximity range).
+* `MBTN_LEFT_DBL` is ignored while the progress bar is active because I use that
+  as an alternate fullscreen toggle.
+
+The original script can be found at
+https://codeberg.org/NRK/mpv-toolbox/src/branch/master/mfpbar and the original
+README is copied verbatim below.
+
+---
+
 # mfpbar
 
 This is a MotherFucking Progressbar.
