@@ -50,6 +50,7 @@ local state = {
 		available = false
 	},
 	userdata_avail = false,
+	used_vo_dragging = false,
 }
 
 local opt = {
@@ -437,6 +438,8 @@ local function pbar_update(next_state)
 
 	if (next_state == PBAR_ACTIVE) then
 		state.pbar = PBAR_ACTIVE
+		state.used_vo_dragging = mp.get_property_bool("input-builtin-dragging")
+		mp.set_property_bool("input-builtin-dragging", false)
 		pbar_draw()
 		if (not state.press_bounded) then
 			mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
@@ -448,6 +451,7 @@ local function pbar_update(next_state)
 			state.time_observed = true
 		end
 	else
+		mp.set_property_bool("input-builtin-dragging", state.used_vo_dragging)
 		if (next_state == PBAR_MAXIMIZED) then
 			state.pbar = PBAR_MAXIMIZED
 			pbar_draw()
