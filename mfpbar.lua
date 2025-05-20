@@ -440,6 +440,7 @@ local function pbar_update(next_state)
 		pbar_draw()
 		if (not state.press_bounded) then
 			mp.add_forced_key_binding('mbtn_left', 'pbar_pressed', pbar_pressed)
+			mp.add_forced_key_binding('mbtn_left_dbl', 'pbar_ignore_dbl')
 			state.press_bounded = true
 		end
 		if (not state.time_observed) then
@@ -476,6 +477,7 @@ local function pbar_update(next_state)
 
 		if (state.press_bounded) then
 			mp.remove_key_binding('pbar_pressed')
+			mp.remove_key_binding('pbar_ignore_dbl')
 			state.press_bounded = false
 		end
 		state.mouse = nil
