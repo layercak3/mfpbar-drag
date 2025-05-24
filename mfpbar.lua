@@ -134,7 +134,7 @@ local function grab_chapter_name_at(sec)
 	local name = nil
 	local psec = -1
 	for _, c in ipairs(state.chapters) do
-		if (sec > c.time) then
+		if (sec >= c.time) then
 			name = c.title
 		end
 		zassert(psec <= c.time)
