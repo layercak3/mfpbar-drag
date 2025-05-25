@@ -54,6 +54,7 @@ local state = {
 	mouse_btn_held = false,
 	exact_drag_seek = false,
 	seek_prev = nil,
+	vo_dragging_off = false,
 }
 
 local opt = {
@@ -478,8 +479,6 @@ local function pbar_update(next_state)
 
 	if (next_state == PBAR_ACTIVE) then
 		state.pbar = PBAR_ACTIVE
-		state.used_vo_dragging = mp.get_property_bool("input-builtin-dragging")
-		mp.set_property_bool("input-builtin-dragging", false)
 		pbar_draw()
 		if (not state.press_bounded) then
 			mp.add_forced_key_binding('mbtn_left', 'pbar_button_event', pbar_button_event, { complex = true })
@@ -490,8 +489,12 @@ local function pbar_update(next_state)
 			mp.observe_property("time-pos", nil, pbar_draw)
 			state.time_observed = true
 		end
+		if (not state.vo_dragging_off) then
+			state.used_vo_dragging = mp.get_property_bool("input-builtin-dragging")
+			mp.set_property_bool("input-builtin-dragging", false)
+			state.vo_dragging_off = true
+		end
 	else
-		mp.set_property_bool("input-builtin-dragging", state.used_vo_dragging)
 		if (next_state == PBAR_MAXIMIZED) then
 			state.pbar = PBAR_MAXIMIZED
 			pbar_draw()
@@ -524,6 +527,10 @@ local function pbar_update(next_state)
 			mp.remove_key_binding('pbar_ignore_dbl')
 			state.press_bounded = false
 		end
+		if (state.vo_dragging_off) then
+			mp.set_property_bool("input-builtin-dragging", state.used_vo_dragging)
+			state.vo_dragging_off = false
+                end
 		state.mouse = nil
 		if (state.thumbfast.available) then
 			mp.commandv("script-message-to", "thumbfast", "clear")
