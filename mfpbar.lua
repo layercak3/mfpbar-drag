@@ -51,10 +51,12 @@ local state = {
 	},
 	userdata_avail = false,
 	used_vo_dragging = false,
+	used_cursor_autohide = 1000,
 	mouse_btn_held = false,
 	exact_drag_seek = false,
 	seek_prev = nil,
 	vo_dragging_off = false,
+	cursor_autohide_off = false,
 }
 
 local opt = {
@@ -494,6 +496,11 @@ local function pbar_update(next_state)
 			mp.set_property_bool("input-builtin-dragging", false)
 			state.vo_dragging_off = true
 		end
+		if (not state.cursor_autohide_off) then
+			state.used_cursor_autohide = mp.get_property_native("cursor-autohide")
+			mp.set_property("cursor-autohide", "no")
+			state.cursor_autohide_off = true
+		end
 	else
 		if (next_state == PBAR_MAXIMIZED) then
 			state.pbar = PBAR_MAXIMIZED
@@ -531,6 +538,10 @@ local function pbar_update(next_state)
 			mp.set_property_bool("input-builtin-dragging", state.used_vo_dragging)
 			state.vo_dragging_off = false
                 end
+		if (state.cursor_autohide_off) then
+			mp.set_property("cursor-autohide", state.used_cursor_autohide)
+			state.cursor_autohide_off = false
+		end
 		state.mouse = nil
 		if (state.thumbfast.available) then
 			mp.commandv("script-message-to", "thumbfast", "clear")

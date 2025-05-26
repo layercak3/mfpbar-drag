@@ -14,6 +14,7 @@ Differences:
   change drag seeking behaviour according to the value of hr-seek.
 * `--input-builtin-dragging` is disabled while the progress bar is active (i.e.
   when the mouse is in the proximity range).
+* `--cursor-autohide` is disabled while the progress bar is active
 * `MBTN_LEFT_DBL` is ignored while the progress bar is active because I use that
   as an alternate fullscreen toggle.
 
