@@ -88,6 +88,7 @@ local opt = {
 	minimize_timeout = 3,
 	maximize_timeout = 1.5,
 	maximize_on_seek = true,
+	hover_lock_to_chapter_time = true,
 
 	debug = false,
 
@@ -195,7 +196,7 @@ end
 
 local function hover_to_sec(mx, dw, duration)
 	zassert(duration)
-	if (opt.chapter_proximity ~= 0 and state.chapters) then
+	if (opt.hover_lock_to_chapter_time and opt.chapter_proximity ~= 0 and state.chapters) then
 		local prox = abs_pixels(opt.chapter_proximity, state.dpy_w)
 		for _,c in ipairs(state.chapters) do
 			local x = state.dpy_w * (c.time / duration)
