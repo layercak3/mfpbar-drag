@@ -24,7 +24,11 @@ Differences:
   of the minimized bar when minimized.
 * The script message 'inhibit yes' can be used to prevent the bar from becoming
   visible, and 'inhibit no' undoes this. You could for example disable the bar
-  while your image detection script detects an image.
+  while your image detection script detects an image. The script counts the
+  number of inhibits ('inhibit yes' increments by one, 'inhibit no' decrements
+  by one) and uninhibits when the count is zero. This allows multiple scripts
+  to control bar visibility at the same time while ensuring the bar becomes
+  visible only when all scripts have restored visibility.
 
 The original script can be found at
 https://codeberg.org/NRK/mpv-toolbox/src/branch/master/mfpbar and the original

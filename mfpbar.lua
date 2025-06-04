@@ -57,7 +57,7 @@ local state = {
 	seek_prev = nil,
 	vo_dragging_off = false,
 	cursor_autohide_off = false,
-	inhibit = false,
+	inhibit_count = 0,
 }
 
 local opt = {
@@ -484,7 +484,7 @@ local function pbar_update(next_state)
 	local dpy_h = state.dpy_h
 
 	if (dpy_w == 0 or dpy_h == 0 or
-	    state.pbar == next_state or state.pbar == PBAR_UNINIT or state.inhibit)
+	    state.pbar == next_state or state.pbar == PBAR_UNINIT or state.inhibit_count > 0)
 	then
 		return
 	end
@@ -714,9 +714,9 @@ end
 local function inhibit(value)
 	if (value == "yes") then
 		pbar_update(PBAR_HIDDEN)
-		state.inhibit = true
+		state.inhibit_count = state.inhibit_count + 1
 	else
-		state.inhibit = false
+		state.inhibit_count = state.inhibit_count - 1
 	end
 end
 
