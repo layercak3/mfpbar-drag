@@ -22,6 +22,9 @@ Differences:
   of the diamond).
 * The OSC margins are disabled while the bar is hidden and reduced to the height
   of the minimized bar when minimized.
+* The script message 'inhibit yes' can be used to prevent the bar from becoming
+  visible, and 'inhibit no' undoes this. You could for example disable the bar
+  while your image detection script detects an image.
 
 The original script can be found at
 https://codeberg.org/NRK/mpv-toolbox/src/branch/master/mfpbar and the original

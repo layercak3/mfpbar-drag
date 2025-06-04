@@ -57,6 +57,7 @@ local state = {
 	seek_prev = nil,
 	vo_dragging_off = false,
 	cursor_autohide_off = false,
+	inhibit = false,
 }
 
 local opt = {
@@ -483,7 +484,7 @@ local function pbar_update(next_state)
 	local dpy_h = state.dpy_h
 
 	if (dpy_w == 0 or dpy_h == 0 or
-	    state.pbar == next_state or state.pbar == PBAR_UNINIT)
+	    state.pbar == next_state or state.pbar == PBAR_UNINIT or state.inhibit)
 	then
 		return
 	end
@@ -710,6 +711,15 @@ local function set_exact_drag_seek(value)
 	end
 end
 
+local function inhibit(value)
+	if (value == "yes") then
+		pbar_update(PBAR_HIDDEN)
+		state.inhibit = true
+	else
+		state.inhibit = false
+	end
+end
+
 local function init()
 	mpopt.read_options(opt, "mfpbar")
 
@@ -778,6 +788,7 @@ local function init()
 
 	mp.add_key_binding(nil, "minimize-or-hide", pbar_minimize_or_hide)
 	mp.register_script_message("exact-drag-seek", set_exact_drag_seek)
+	mp.register_script_message("inhibit", inhibit)
 end
 
 init()
