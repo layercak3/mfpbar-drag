@@ -460,6 +460,24 @@ local function pbar_button_event(complex)
 	end
 end
 
+local function set_osc_margins()
+	local b = 0
+	if (state.pbar == PBAR_MINIMIZED) then
+		b = opt.pbar_minimized_height / 100.0
+	elseif (state.pbar == PBAR_ACTIVE or state.pbar == PBAR_MAXIMIZED) then
+		-- ensure we don't obstruct the console (excluding the preview and hovered timeline)
+		b = (opt.font_size + (opt.font_border_width * 2) + 8) / state.dpy_h -- +8 padding
+		b = b + ((opt.pbar_minimized_height + opt.cachebar_height) / 100.0)
+	end
+	if (state.userdata_avail) then
+		mp.set_property_native("user-data/osc/margins", { l = 0, r = 0, t = 0, b = b })
+	elseif (utils.shared_script_property_set ~= nil) then   -- for older mpv versions
+		utils.shared_script_property_set(
+			'osc-margins', string.format('%f,%f,%f,%f', 0, 0, 0, b)
+		)
+	end
+end
+
 local function pbar_update(next_state)
 	local dpy_w = state.dpy_w
 	local dpy_h = state.dpy_h
@@ -548,6 +566,8 @@ local function pbar_update(next_state)
 			mp.commandv("script-message-to", "thumbfast", "clear")
 		end
 	end
+
+	set_osc_margins()
 end
 
 local function pbar_minimize_or_hide()
@@ -628,17 +648,6 @@ local function set_dpy_size(kind, osd)
 	state.dpy_h     = osd.h
 	state.osd.res_y = osd.h
 	msg.debug('[DPY] w = ', osd.w, ' h = ', osd.h)
-
-	-- ensure we don't obstruct the console (excluding the preview and hovered timeline)
-	local b = (opt.font_size + (opt.font_border_width * 2) + 8) / state.dpy_h -- +8 padding
-	b = b + ((opt.pbar_minimized_height + opt.cachebar_height) / 100.0)
-	if (state.userdata_avail) then
-		mp.set_property_native("user-data/osc/margins", { l = 0, r = 0, t = 0, b = b })
-	elseif (utils.shared_script_property_set ~= nil) then   -- for older mpv versions
-		utils.shared_script_property_set(
-			'osc-margins', string.format('%f,%f,%f,%f', 0, 0, 0, b)
-		)
-	end
 end
 
 local function set_cache_state(kind, c)

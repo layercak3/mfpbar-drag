@@ -20,6 +20,8 @@ Differences:
 * The `hover_lock_to_chapter_time` option controls whether hovering over a
   chapter diamond should lock the preview to displaying the chapter time (middle
   of the diamond).
+* The OSC margins are disabled while the bar is hidden and reduced to the height
+  of the minimized bar when minimized.
 
 The original script can be found at
 https://codeberg.org/NRK/mpv-toolbox/src/branch/master/mfpbar and the original
