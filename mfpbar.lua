@@ -38,6 +38,7 @@ local state = {
 	cached_ranges = nil,
 	duration = nil,
 	chapters = nil,
+	chapters_all_empty_titles = false,
 	minimize_timeout = { kill = function() end, resume = function() end },
 	maximize_timeout = { kill = function() end, resume = function() end },
 	time_observed = false,
@@ -372,7 +373,7 @@ local function pbar_draw()
 		ypos = ypos + fs + (fopt.bw * 2)
 
 		-- L3: chapter name
-		local cname = clist and grab_chapter_name_at(hover_sec) or nil
+		local cname = clist and not state.chapters_all_empty_titles and grab_chapter_name_at(hover_sec) or nil
 		if cname then
 			zassert(cname)
 			local fw = string.len(cname) * fs * 0.28 -- guesstimate again
@@ -675,6 +676,13 @@ local function set_chapter_list(kind, c)
 	if (c and #c > 0) then
 		state.chapters = c
 		table.sort(state.chapters, function(a, b) return a.time < b.time end)
+		for _, c in ipairs(state.chapters) do
+			if c.title ~= nil and c.title ~= '' then
+				state.chapters_all_empty_titles = false
+				return
+			end
+		end
+		state.chapters_all_empty_titles = true
 	else
 		state.chapters = nil
 	end

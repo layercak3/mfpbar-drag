@@ -29,6 +29,8 @@ Differences:
   by one) and uninhibits when the count is zero. This allows multiple scripts
   to control bar visibility at the same time while ensuring the bar becomes
   visible only when all scripts have restored visibility.
+* If all chapter titles are empty strings, space isn't allocated for the chapter
+  title line.
 
 The original script can be found at
 https://codeberg.org/NRK/mpv-toolbox/src/branch/master/mfpbar and the original
